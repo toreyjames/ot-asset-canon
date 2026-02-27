@@ -3,6 +3,7 @@
 // Based on realistic engineering requirements
 
 import type { CanonAsset, AssetType, CanonLayer } from "@/types/canon";
+import { analyzeProcessEngineering, type ProcessEngineeringAnalysis } from "./process-engineering-analysis";
 
 // Plant type inference based on equipment and process variables
 export type PlantType =
@@ -402,6 +403,14 @@ export interface CompletenessResult {
   criticalGapCount: number;
   warningGapCount: number;
   recommendations: string[];
+
+  // Engineering analysis integration
+  engineeringGaps: {
+    critical: number;
+    major: number;
+    minor: number;
+  };
+  engineeringAnalysis?: ProcessEngineeringAnalysis;
 }
 
 // Infer plant type from inventory
@@ -607,6 +616,21 @@ export function checkInventoryCompleteness(
   const partialLoops = Math.abs(sensors.length - actuators.length);
   const orphaned = Math.max(0, sensors.length - loopCapacity) + Math.max(0, actuators.length - loopCapacity);
 
+  // Run engineering analysis to find data gaps
+  const engineeringAnalysis = analyzeProcessEngineering(assets);
+
+  // Count engineering observations by severity
+  const engineeringGaps = {
+    critical: engineeringAnalysis.observations.filter(o => o.severity === "critical").length,
+    major: engineeringAnalysis.observations.filter(o => o.severity === "major").length,
+    minor: engineeringAnalysis.observations.filter(o => o.severity === "minor").length,
+  };
+
+  // Engineering gaps reduce our confidence we could run the plant
+  // Critical engineering gaps (missing reboilers, no feed prep) are blockers
+  // Major gaps reduce score significantly
+  const engineeringPenalty = (engineeringGaps.critical * 15) + (engineeringGaps.major * 5);
+
   // Calculate overall score with weighted layers
   // Layers 1-3 are critical for operations
   const weights = { 1: 0.20, 2: 0.25, 3: 0.25, 4: 0.15, 5: 0.10, 6: 0.05 };
@@ -614,23 +638,43 @@ export function checkInventoryCompleteness(
   for (const ls of layerScores) {
     weightedScore += ls.score * (weights[ls.layer as keyof typeof weights] || 0);
   }
-  const overallScore = Math.round(weightedScore);
+
+  // Apply engineering penalty - we're missing data to actually run the plant
+  const overallScore = Math.max(0, Math.round(weightedScore - engineeringPenalty));
 
   // Can only run plant if:
-  // 1. No critical gaps
-  // 2. Overall score >= 75
-  // 3. Layers 1-3 each >= 70
+  // 1. No critical gaps (basic inventory)
+  // 2. No critical engineering gaps (missing major systems)
+  // 3. Overall score >= 75
+  // 4. Layers 1-3 each >= 70
   const layers1to3Complete = layerScores
     .filter((ls) => ls.layer <= 3)
     .every((ls) => ls.score >= 70);
 
-  const canRunPlant = criticalGapCount === 0 && overallScore >= 75 && layers1to3Complete;
+  const canRunPlant =
+    criticalGapCount === 0 &&
+    engineeringGaps.critical === 0 &&
+    overallScore >= 75 &&
+    layers1to3Complete;
 
   // Build recommendations
   const recommendations: string[] = [];
 
+  // Engineering data gaps are primary blockers
+  if (engineeringGaps.critical > 0) {
+    recommendations.push(`${engineeringGaps.critical} critical data gaps - missing documentation for essential equipment/systems.`);
+  }
+  if (engineeringGaps.major > 0) {
+    recommendations.push(`${engineeringGaps.major} major data gaps - need to document additional equipment.`);
+  }
+
+  // Add specific engineering observations as recommendations
+  for (const obs of engineeringAnalysis.observations.filter(o => o.severity === "critical")) {
+    recommendations.push(`Data gap: ${obs.title} - ${obs.dataToCollect}`);
+  }
+
   if (criticalGapCount > 0) {
-    recommendations.push(`${criticalGapCount} critical gaps must be resolved before plant can operate.`);
+    recommendations.push(`${criticalGapCount} inventory gaps - missing asset categories.`);
   }
 
   if (!layers1to3Complete) {
@@ -693,7 +737,9 @@ export function checkInventoryCompleteness(
     },
     criticalGapCount,
     warningGapCount,
-    recommendations: recommendations.slice(0, 10),
+    recommendations: recommendations.slice(0, 12),
+    engineeringGaps,
+    engineeringAnalysis,
   };
 }
 
