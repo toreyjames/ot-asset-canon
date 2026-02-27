@@ -19,5 +19,12 @@ export async function GET() {
     criticalGapCount: completeness.criticalGapCount,
     warningGapCount: completeness.warningGapCount,
     recommendations: completeness.recommendations,
+    layerScores: completeness.layerScores.map(ls => ({
+      layer: ls.layer,
+      name: ls.name,
+      score: ls.score,
+      status: ls.status,
+      gapCount: ls.gaps.length,
+    })),
   });
 }

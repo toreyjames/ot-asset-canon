@@ -481,11 +481,49 @@ export function inferPlantType(assets: Partial<CanonAsset>[]): {
   };
 }
 
+// Map engineering observation categories to Purdue layers
+function getLayerForObservation(obs: { category: string; title: string }): CanonLayer {
+  // Equipment gaps are Layer 1
+  if (obs.category === "undocumented_unit" || obs.category === "undocumented_equipment") {
+    return 1;
+  }
+  // Control and instrumentation gaps are Layer 2
+  if (obs.category === "control_gap" || obs.title.toLowerCase().includes("instrumentation")) {
+    return 2;
+  }
+  // Safety gaps span L2 (devices) and L3 (logic)
+  if (obs.category === "safety_gap") {
+    return 2;
+  }
+  // Default data gaps to Layer 1 (most are about physical equipment)
+  return 1;
+}
+
 // Check inventory completeness
 export function checkInventoryCompleteness(
   assets: Partial<CanonAsset>[]
 ): CompletenessResult {
   const plantTypeResult = inferPlantType(assets);
+
+  // Run engineering analysis FIRST so we can integrate into layer scores
+  const engineeringAnalysis = analyzeProcessEngineering(assets);
+
+  // Count engineering observations by severity
+  const engineeringGaps = {
+    critical: engineeringAnalysis.observations.filter(o => o.severity === "critical").length,
+    major: engineeringAnalysis.observations.filter(o => o.severity === "major").length,
+    minor: engineeringAnalysis.observations.filter(o => o.severity === "minor").length,
+  };
+
+  // Group engineering observations by layer
+  const engineeringGapsByLayer = new Map<CanonLayer, typeof engineeringAnalysis.observations>();
+  for (const layer of [1, 2, 3, 4, 5, 6] as CanonLayer[]) {
+    engineeringGapsByLayer.set(layer, []);
+  }
+  for (const obs of engineeringAnalysis.observations) {
+    const layer = getLayerForObservation(obs);
+    engineeringGapsByLayer.get(layer)!.push(obs);
+  }
 
   // Group assets by layer
   const assetsByLayer = new Map<CanonLayer, Partial<CanonAsset>[]>();
@@ -581,9 +619,37 @@ export function checkInventoryCompleteness(
       }
     }
 
-    const score = totalWeight > 0
+    // Add engineering gaps for this layer
+    const layerEngineeringGaps = engineeringGapsByLayer.get(requirement.layer) || [];
+    for (const obs of layerEngineeringGaps) {
+      const severity = obs.severity === "critical" ? "critical"
+        : obs.severity === "major" ? "warning"
+        : "info";
+
+      if (obs.severity === "critical") criticalGapCount++;
+      else if (obs.severity === "major") warningGapCount++;
+
+      gaps.push({
+        category: obs.title,
+        description: obs.observation,
+        severity,
+        have: 0,
+        need: 1,
+        suggestion: obs.dataToCollect,
+      });
+    }
+
+    // Calculate engineering penalty for this layer
+    const layerCritical = layerEngineeringGaps.filter(o => o.severity === "critical").length;
+    const layerMajor = layerEngineeringGaps.filter(o => o.severity === "major").length;
+    const engineeringPenalty = (layerCritical * 20) + (layerMajor * 10);
+
+    const baseScore = totalWeight > 0
       ? Math.round((categoryScores / totalWeight) * 100)
       : 100;
+
+    // Apply engineering penalty to layer score
+    const score = Math.max(0, baseScore - engineeringPenalty);
 
     layerScores.push({
       layer: requirement.layer,
@@ -616,22 +682,8 @@ export function checkInventoryCompleteness(
   const partialLoops = Math.abs(sensors.length - actuators.length);
   const orphaned = Math.max(0, sensors.length - loopCapacity) + Math.max(0, actuators.length - loopCapacity);
 
-  // Run engineering analysis to find data gaps
-  const engineeringAnalysis = analyzeProcessEngineering(assets);
-
-  // Count engineering observations by severity
-  const engineeringGaps = {
-    critical: engineeringAnalysis.observations.filter(o => o.severity === "critical").length,
-    major: engineeringAnalysis.observations.filter(o => o.severity === "major").length,
-    minor: engineeringAnalysis.observations.filter(o => o.severity === "minor").length,
-  };
-
-  // Engineering gaps reduce our confidence we could run the plant
-  // Critical engineering gaps (missing reboilers, no feed prep) are blockers
-  // Major gaps reduce score significantly
-  const engineeringPenalty = (engineeringGaps.critical * 15) + (engineeringGaps.major * 5);
-
   // Calculate overall score with weighted layers
+  // Engineering penalties are already applied at the layer level
   // Layers 1-3 are critical for operations
   const weights = { 1: 0.20, 2: 0.25, 3: 0.25, 4: 0.15, 5: 0.10, 6: 0.05 };
   let weightedScore = 0;
@@ -639,8 +691,7 @@ export function checkInventoryCompleteness(
     weightedScore += ls.score * (weights[ls.layer as keyof typeof weights] || 0);
   }
 
-  // Apply engineering penalty - we're missing data to actually run the plant
-  const overallScore = Math.max(0, Math.round(weightedScore - engineeringPenalty));
+  const overallScore = Math.round(weightedScore);
 
   // Can only run plant if:
   // 1. No critical gaps (basic inventory)
