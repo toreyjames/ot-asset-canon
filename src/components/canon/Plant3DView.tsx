@@ -5,6 +5,7 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Text, Line, Html } from "@react-three/drei";
 import * as THREE from "three";
 import type { CanonAsset } from "@/types/canon";
+import { analyzeProcessEngineering, type EngineeringObservation } from "@/lib/process-engineering-analysis";
 
 // ============================================================================
 // PROCESS FLOW LAYOUT ENGINE
@@ -25,14 +26,25 @@ interface EquipmentPosition {
   parentUnit?: string;
 }
 
+interface GapPosition {
+  id: string;
+  type: "reboiler" | "condenser" | "reflux_drum" | "feed_prep" | "finishing" | "catalyst" | "pump" | "generic";
+  label: string;
+  description: string;
+  position: [number, number, number];
+  severity: "critical" | "major" | "minor";
+}
+
 // Build process flow from assets
 function buildProcessFlow(assets: Partial<CanonAsset>[]): {
   positions: Map<string, EquipmentPosition>;
   pipes: Array<{ from: [number, number, number]; to: [number, number, number]; color: string }>;
   units: ProcessUnit[];
+  gaps: GapPosition[];
 } {
   const positions = new Map<string, EquipmentPosition>();
   const pipes: Array<{ from: [number, number, number]; to: [number, number, number]; color: string }> = [];
+  const gaps: GapPosition[] = [];
 
   // Step 1: Identify major equipment (the "anchors" of the process)
   const reactors = assets.filter(a => a.assetType === "reactor");
@@ -244,6 +256,28 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
         to: [colX - 1.5, -0.5, colZ],
         color: "#f97316"
       });
+    } else {
+      // GAP: Column has no reboiler documented
+      gaps.push({
+        id: `gap-reboiler-${column.tagNumber}`,
+        type: "reboiler",
+        label: "Reboiler?",
+        description: `Column ${column.tagNumber} needs a reboiler - not documented in inventory`,
+        position: [colX - 2, -0.5, colZ],
+        severity: "critical"
+      });
+    }
+
+    // Check for missing reflux drum
+    if (refluxDrums.length === 0 && condensers.length > 0) {
+      gaps.push({
+        id: `gap-reflux-${column.tagNumber}`,
+        type: "reflux_drum",
+        label: "Reflux Drum?",
+        description: `Column ${column.tagNumber} has condenser but no reflux drum documented`,
+        position: [colX + 2, 1, colZ],
+        severity: "major"
+      });
     }
 
     // Reflux pump
@@ -424,6 +458,84 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
     }
   }
 
+  // === DETECT MAJOR PROCESS GAPS ===
+
+  // Check for feed preparation section
+  const hasFeedPrep = assets.some(a =>
+    a.engineering?.processArea?.toLowerCase().includes("feed prep") ||
+    a.name?.toLowerCase().includes("feed heater") ||
+    a.name?.toLowerCase().includes("feed filter")
+  );
+  if (!hasFeedPrep && reactors.length > 0) {
+    gaps.push({
+      id: "gap-feed-prep",
+      type: "feed_prep",
+      label: "Feed Prep?",
+      description: "No feed preparation equipment documented - raw materials typically need filtering, heating, or mixing before reaction",
+      position: [-8, 0.5, 0],
+      severity: "major"
+    });
+  }
+
+  // Check for catalyst system (for polymerization)
+  const hasCatalyst = assets.some(a =>
+    a.name?.toLowerCase().includes("catalyst") ||
+    a.tagNumber?.includes("CAT")
+  );
+  const isPolymerization = assets.some(a =>
+    a.name?.toLowerCase().includes("polymer") ||
+    a.name?.toLowerCase().includes("monomer")
+  );
+  if (!hasCatalyst && isPolymerization) {
+    gaps.push({
+      id: "gap-catalyst",
+      type: "catalyst",
+      label: "Catalyst System?",
+      description: "Polymerization process detected but no catalyst feed system documented",
+      position: [-4, 0.5, 3],
+      severity: "critical"
+    });
+  }
+
+  // Check for product finishing/pelletizing
+  const hasFinishing = assets.some(a =>
+    a.name?.toLowerCase().includes("pellet") ||
+    a.name?.toLowerCase().includes("extrud") ||
+    a.name?.toLowerCase().includes("dryer") ||
+    a.name?.toLowerCase().includes("bagging")
+  );
+  if (!hasFinishing && isPolymerization) {
+    gaps.push({
+      id: "gap-finishing",
+      type: "finishing",
+      label: "Finishing?",
+      description: "Polymer product but no finishing equipment (pelletizer, dryer, bagging) documented",
+      position: [xPos + 8, 0.5, 0],
+      severity: "major"
+    });
+  }
+
+  // Check that each pump-requiring equipment has pumps
+  for (const column of columns) {
+    const hasRefluxPump = pumps.some(p =>
+      p.name?.toLowerCase().includes("reflux") ||
+      p.tagNumber?.includes(column.tagNumber?.replace("C-", "P-") || "XXX")
+    );
+    if (!hasRefluxPump) {
+      const colPos = positions.get(column.id || column.tagNumber || "");
+      if (colPos) {
+        gaps.push({
+          id: `gap-pump-reflux-${column.tagNumber}`,
+          type: "pump",
+          label: "Reflux Pump?",
+          description: `Column ${column.tagNumber} needs reflux pump - not documented`,
+          position: [colPos.position[0] + 2, -0.5, colPos.position[2] + 1.5],
+          severity: "major"
+        });
+      }
+    }
+  }
+
   // Build units summary
   const units: ProcessUnit[] = [
     { id: "feed", name: "Feed Section", assets: [], position: [-12, 0, 0], connections: ["reaction"] },
@@ -434,7 +546,7 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
     { id: "control", name: "Control Room", assets: [], position: [0, 0, -12], connections: [] },
   ];
 
-  return { positions, pipes, units };
+  return { positions, pipes, units, gaps };
 }
 
 // ============================================================================
@@ -795,6 +907,123 @@ function Generic3D({ position, color, selected, onClick }: {
   );
 }
 
+// ============================================================================
+// GHOST EQUIPMENT - Visual indicator for gaps/missing equipment
+// ============================================================================
+
+function GhostEquipment({ gap, selected, onSelect }: {
+  gap: GapPosition;
+  selected: boolean;
+  onSelect: (gap: GapPosition) => void;
+}) {
+  const meshRef = useRef<THREE.Mesh>(null);
+
+  // Pulsing animation to draw attention
+  useFrame((state) => {
+    if (meshRef.current) {
+      meshRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 3) * 0.1);
+    }
+  });
+
+  const color = gap.severity === "critical" ? "#ef4444" : gap.severity === "major" ? "#f97316" : "#eab308";
+
+  // Different shapes based on gap type
+  const getShape = () => {
+    switch (gap.type) {
+      case "reboiler":
+        return (
+          <group>
+            <mesh rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.25, 0.25, 1.5, 16]} />
+              <meshStandardMaterial
+                color={color}
+                transparent
+                opacity={0.4}
+                wireframe
+              />
+            </mesh>
+            <mesh rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.27, 0.27, 1.5, 16]} />
+              <meshStandardMaterial
+                color={color}
+                transparent
+                opacity={0.15}
+              />
+            </mesh>
+          </group>
+        );
+      case "reflux_drum":
+        return (
+          <group>
+            <mesh rotation={[0, 0, Math.PI / 2]}>
+              <cylinderGeometry args={[0.35, 0.35, 1, 16]} />
+              <meshStandardMaterial
+                color={color}
+                transparent
+                opacity={0.4}
+                wireframe
+              />
+            </mesh>
+          </group>
+        );
+      case "pump":
+        return (
+          <group>
+            <mesh>
+              <cylinderGeometry args={[0.15, 0.2, 0.25, 8]} />
+              <meshStandardMaterial
+                color={color}
+                transparent
+                opacity={0.4}
+                wireframe
+              />
+            </mesh>
+          </group>
+        );
+      case "feed_prep":
+      case "finishing":
+      case "catalyst":
+      default:
+        return (
+          <group>
+            <mesh ref={meshRef}>
+              <boxGeometry args={[1.5, 1, 1]} />
+              <meshStandardMaterial
+                color={color}
+                transparent
+                opacity={0.3}
+                wireframe
+              />
+            </mesh>
+            <mesh>
+              <boxGeometry args={[1.6, 1.1, 1.1]} />
+              <meshStandardMaterial
+                color={color}
+                transparent
+                opacity={0.1}
+              />
+            </mesh>
+          </group>
+        );
+    }
+  };
+
+  return (
+    <group position={gap.position} onClick={() => onSelect(gap)}>
+      {getShape()}
+      {/* Question mark indicator */}
+      <Html position={[0, 1, 0]} center style={{ pointerEvents: "none" }}>
+        <div className={`px-2 py-1 rounded text-xs font-bold text-white ${
+          gap.severity === "critical" ? "bg-red-500" :
+          gap.severity === "major" ? "bg-orange-500" : "bg-yellow-500"
+        } animate-pulse`}>
+          {gap.label}
+        </div>
+      </Html>
+    </group>
+  );
+}
+
 // Equipment renderer
 function Equipment({
   asset,
@@ -880,14 +1109,20 @@ function PlantScene({
   assets,
   selectedAsset,
   onSelectAsset,
+  selectedGap,
+  onSelectGap,
   colorMode,
+  showGaps,
 }: {
   assets: Partial<CanonAsset>[];
   selectedAsset: Partial<CanonAsset> | null;
   onSelectAsset: (asset: Partial<CanonAsset> | null) => void;
+  selectedGap: GapPosition | null;
+  onSelectGap: (gap: GapPosition | null) => void;
   colorMode: "layer" | "risk" | "unit";
+  showGaps: boolean;
 }) {
-  const { positions, pipes, units } = useMemo(() => buildProcessFlow(assets), [assets]);
+  const { positions, pipes, units, gaps } = useMemo(() => buildProcessFlow(assets), [assets]);
 
   return (
     <>
@@ -945,6 +1180,28 @@ function PlantScene({
         <Pipe3D key={idx} start={pipe.from} end={pipe.to} color={pipe.color} />
       ))}
 
+      {/* Equipment Gaps - ghost equipment showing what's missing */}
+      {showGaps && gaps.map((gap) => (
+        <GhostEquipment
+          key={gap.id}
+          gap={gap}
+          selected={selectedGap?.id === gap.id}
+          onSelect={(g) => {
+            onSelectGap(g);
+            onSelectAsset(null);
+          }}
+        />
+      ))}
+
+      {/* Gap count indicator */}
+      {showGaps && gaps.length > 0 && (
+        <Html position={[-15, 6, 0]} center>
+          <div className="bg-red-600 text-white px-3 py-1 rounded-full text-sm font-bold">
+            {gaps.length} Equipment Gaps
+          </div>
+        </Html>
+      )}
+
       {/* Camera controls */}
       <OrbitControls
         enablePan
@@ -962,12 +1219,17 @@ function PlantScene({
 // Main component
 export default function Plant3DView({ assets }: { assets: Partial<CanonAsset>[] }) {
   const [selectedAsset, setSelectedAsset] = useState<Partial<CanonAsset> | null>(null);
+  const [selectedGap, setSelectedGap] = useState<GapPosition | null>(null);
   const [colorMode, setColorMode] = useState<"layer" | "risk" | "unit">("unit");
+  const [showGaps, setShowGaps] = useState(true); // Show gaps by default
+
+  // Count gaps for display
+  const { gaps } = useMemo(() => buildProcessFlow(assets), [assets]);
 
   return (
     <div className="relative w-full h-[700px] bg-slate-900 rounded-lg overflow-hidden">
       {/* Controls */}
-      <div className="absolute top-4 left-4 z-10 flex gap-2">
+      <div className="absolute top-4 left-4 z-10 flex gap-2 items-center">
         <select
           value={colorMode}
           onChange={(e) => setColorMode(e.target.value as "layer" | "risk" | "unit")}
@@ -977,6 +1239,17 @@ export default function Plant3DView({ assets }: { assets: Partial<CanonAsset>[] 
           <option value="layer">Color by Purdue Layer</option>
           <option value="risk">Color by Risk Tier</option>
         </select>
+
+        <button
+          onClick={() => setShowGaps(!showGaps)}
+          className={`px-3 py-1.5 rounded text-sm font-medium border ${
+            showGaps
+              ? "bg-red-600 border-red-500 text-white"
+              : "bg-slate-800 border-slate-700 text-slate-400"
+          }`}
+        >
+          {showGaps ? `Gaps (${gaps.length})` : "Show Gaps"}
+        </button>
       </div>
 
       {/* Legend */}
@@ -1079,14 +1352,67 @@ export default function Plant3DView({ assets }: { assets: Partial<CanonAsset>[] 
         </div>
       )}
 
+      {/* Selected gap panel */}
+      {selectedGap && (
+        <div className="absolute bottom-4 right-4 z-10 bg-slate-800/95 p-4 rounded-lg w-80 border-2 border-red-500">
+          <div className="flex justify-between items-start mb-3">
+            <div>
+              <div className="font-bold text-red-400 text-lg flex items-center gap-2">
+                <span className="text-2xl">⚠</span>
+                Equipment Gap
+              </div>
+              <div className="text-sm text-white">{selectedGap.label}</div>
+            </div>
+            <button
+              onClick={() => setSelectedGap(null)}
+              className="text-slate-400 hover:text-white text-xl leading-none"
+            >
+              ×
+            </button>
+          </div>
+          <div className="text-sm space-y-2">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Severity</span>
+              <span className={`capitalize font-medium ${
+                selectedGap.severity === "critical" ? "text-red-400" :
+                selectedGap.severity === "major" ? "text-orange-400" :
+                "text-yellow-400"
+              }`}>
+                {selectedGap.severity}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Type</span>
+              <span className="text-white capitalize">{selectedGap.type.replace(/_/g, " ")}</span>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700">
+              <div className="text-slate-300 text-xs leading-relaxed">{selectedGap.description}</div>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-700 bg-slate-900/50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
+              <div className="text-slate-400 text-xs font-medium mb-1">Action Required:</div>
+              <div className="text-white text-xs">Document this equipment in the inventory to complete the plant model.</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Canvas */}
       <Canvas camera={{ position: [25, 20, 25], fov: 45 }} shadows>
         <Suspense fallback={null}>
           <PlantScene
             assets={assets}
             selectedAsset={selectedAsset}
-            onSelectAsset={setSelectedAsset}
+            onSelectAsset={(asset) => {
+              setSelectedAsset(asset);
+              setSelectedGap(null);
+            }}
+            selectedGap={selectedGap}
+            onSelectGap={(gap) => {
+              setSelectedGap(gap);
+              setSelectedAsset(null);
+            }}
             colorMode={colorMode}
+            showGaps={showGaps}
           />
         </Suspense>
       </Canvas>
