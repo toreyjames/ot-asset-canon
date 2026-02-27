@@ -1,10 +1,13 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, lazy, Suspense } from "react";
 import ProcessMap from "@/components/canon/ProcessMap";
 import RelationshipGraph from "@/components/canon/RelationshipGraph";
 import VulnerabilityPanel from "@/components/canon/VulnerabilityPanel";
 import PlantReconstructionPanel from "@/components/canon/PlantReconstruction";
+
+// Lazy load 3D view since Three.js is heavy
+const Plant3DView = lazy(() => import("@/components/canon/Plant3DView"));
 import {
   checkInventoryCompleteness,
   analyzeGaps,
@@ -209,6 +212,20 @@ export default function InventoryPage() {
           onAssetClick={setSelectedAsset}
           showNetworkOverlay={showNetworkOverlay}
         />
+      </div>
+
+      {/* 3D Plant View */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+          3D Plant Model
+        </h2>
+        <Suspense fallback={
+          <div className="w-full h-[600px] bg-gray-900 rounded-lg flex items-center justify-center">
+            <div className="text-gray-400">Loading 3D View...</div>
+          </div>
+        }>
+          <Plant3DView assets={CHEMICAL_PLANT_ASSETS} />
+        </Suspense>
       </div>
 
       {/* Relationship Graph */}
