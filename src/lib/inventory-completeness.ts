@@ -651,12 +651,25 @@ export function checkInventoryCompleteness(
     // Apply engineering penalty to layer score
     const score = Math.max(0, baseScore - engineeringPenalty);
 
+    // Status must account for gaps - can't be "complete" if there are data gaps
+    const hasCriticalGaps = gaps.some(g => g.severity === "critical");
+    const hasAnyGaps = gaps.length > 0;
+
+    let status: "complete" | "partial" | "missing";
+    if (score < 50 || hasCriticalGaps) {
+      status = "missing";
+    } else if (score < 90 || hasAnyGaps) {
+      status = "partial";
+    } else {
+      status = "complete";
+    }
+
     layerScores.push({
       layer: requirement.layer,
       name: requirement.name,
       score,
       assetCount: layerAssets.length,
-      status: score >= 90 ? "complete" : score >= 50 ? "partial" : "missing",
+      status,
       gaps,
     });
   }
