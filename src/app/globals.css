@@ -1,0 +1,92 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground: #171717;
+  --background: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground: #ededed;
+    --background: #0a0a0a;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Canon Layer Colors */
+.layer-1 { @apply bg-layer1 text-white; }
+.layer-2 { @apply bg-layer2 text-white; }
+.layer-3 { @apply bg-layer3 text-white; }
+.layer-4 { @apply bg-layer4 text-white; }
+.layer-5 { @apply bg-layer5 text-white; }
+.layer-6 { @apply bg-layer6 text-white; }
+
+.layer-1-light { @apply bg-layer1-light text-layer1; }
+.layer-2-light { @apply bg-layer2-light text-layer2; }
+.layer-3-light { @apply bg-layer3-light text-layer3; }
+.layer-4-light { @apply bg-layer4-light text-layer4; }
+.layer-5-light { @apply bg-layer5-light text-layer5; }
+.layer-6-light { @apply bg-layer6-light text-layer6; }
+
+/* Risk Tier Colors */
+.risk-critical { @apply bg-critical text-white; }
+.risk-high { @apply bg-high text-white; }
+.risk-medium { @apply bg-medium text-white; }
+.risk-low { @apply bg-low text-white; }
+
+/* Canon Architecture Visualization */
+.canon-stack {
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 0.5rem;
+}
+
+.canon-layer {
+  @apply rounded-lg p-4 transition-all duration-200;
+}
+
+.canon-layer:hover {
+  @apply scale-[1.02] shadow-lg;
+}
+
+/* Asset Card */
+.asset-card {
+  @apply bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 p-4 shadow-sm;
+}
+
+.asset-card:hover {
+  @apply shadow-md border-gray-300 dark:border-gray-600;
+}
+
+/* Attack Path Visualization */
+.attack-path {
+  @apply relative;
+}
+
+.attack-path-node {
+  @apply rounded-full w-8 h-8 flex items-center justify-center text-white text-sm font-bold;
+}
+
+.attack-path-edge {
+  @apply h-0.5 bg-red-500;
+}
+
+/* Consequence Chain */
+.consequence-chain {
+  @apply flex flex-col gap-2;
+}
+
+.consequence-step {
+  @apply flex items-center gap-2;
+}
+
+.consequence-arrow {
+  @apply text-gray-400;
+}
