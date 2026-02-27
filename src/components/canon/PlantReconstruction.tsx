@@ -8,7 +8,7 @@ interface EngineeringObservation {
   title: string;
   observation: string;
   engineeringRationale: string;
-  suggestedAction: string;
+  dataToCollect: string;
   affectedArea: string;
   relatedAssets: string[];
 }
@@ -115,12 +115,12 @@ const SEVERITY_STYLES = {
 };
 
 const CATEGORY_LABELS: Record<string, string> = {
-  missing_unit: "Missing Unit Operation",
-  missing_equipment: "Missing Equipment",
-  control_gap: "Control Gap",
-  safety_gap: "Safety Gap",
-  process_logic: "Process Logic Issue",
-  redundancy: "Redundancy Issue",
+  undocumented_unit: "Unit Not Documented",
+  undocumented_equipment: "Equipment Not Documented",
+  control_gap: "Control Data Gap",
+  safety_gap: "Safety Data Gap",
+  data_gap: "Inventory Gap",
+  redundancy: "Redundancy Not Documented",
 };
 
 export default function PlantReconstructionPanel() {
@@ -342,9 +342,9 @@ export default function PlantReconstructionPanel() {
                               </div>
                             </div>
                             <div className="bg-white/50 dark:bg-gray-800/50 rounded p-2">
-                              <div className="text-xs text-gray-500 mb-1">Suggested Action</div>
+                              <div className="text-xs text-gray-500 mb-1">Data to Collect</div>
                               <div className="text-gray-700 dark:text-gray-300">
-                                {obs.suggestedAction}
+                                {obs.dataToCollect}
                               </div>
                             </div>
                           </div>

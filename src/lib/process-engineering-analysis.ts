@@ -19,11 +19,11 @@ import type { CanonAsset } from "@/types/canon";
 
 export interface EngineeringObservation {
   severity: "critical" | "major" | "minor" | "question";
-  category: "missing_unit" | "missing_equipment" | "control_gap" | "safety_gap" | "process_logic" | "redundancy";
+  category: "undocumented_unit" | "undocumented_equipment" | "control_gap" | "safety_gap" | "data_gap" | "redundancy";
   title: string;
   observation: string;
   engineeringRationale: string;
-  suggestedAction: string;
+  dataToCollect: string;
   affectedArea: string;
   relatedAssets: string[];
 }
@@ -247,15 +247,15 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
   if (!hasFeedPrep && byType.reactors.length > 0) {
     observations.push({
       severity: "major",
-      category: "missing_unit",
-      title: "No Feed Preparation Section",
-      observation: "Reactors are present but there's no identifiable feed preparation area",
-      engineeringRationale: "Every reaction system needs feed preparation - mixing, heating/cooling, purification. Raw materials don't just appear at reactor inlet conditions.",
-      suggestedAction: "Identify or add feed preparation equipment: surge drums, feed heaters, mixers, filters",
+      category: "undocumented_unit",
+      title: "Feed Preparation Section Not in Inventory",
+      observation: "Reactors are documented but feed preparation equipment isn't in the asset list",
+      engineeringRationale: "Every reaction system has feed preparation - surge drums, heaters, mixers, filters. This equipment exists but isn't captured in our data.",
+      dataToCollect: "Document feed preparation equipment: surge drums, feed heaters/coolers, mixers, filters, feed pumps",
       affectedArea: "Reaction",
       relatedAssets: byType.reactors.map(r => r.tagNumber || ""),
     });
-    materialBalanceGaps.push("Feed source and preparation not documented");
+    materialBalanceGaps.push("Feed preparation equipment not documented");
   }
 
   // Does this plant have product finishing/loading?
@@ -271,15 +271,15 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
   if (!hasProductFinishing && byType.tanks.length > 0) {
     observations.push({
       severity: "major",
-      category: "missing_unit",
-      title: "No Product Loading/Finishing",
-      observation: "Product storage tanks exist but no loading rack or finishing equipment",
-      engineeringRationale: "Product has to leave the plant somehow - truck loading, rail loading, pipeline, or pelletizing for polymer plants.",
-      suggestedAction: "Document product disposition: loading arms, metering skids, or polymer finishing equipment",
+      category: "undocumented_unit",
+      title: "Product Loading/Finishing Not in Inventory",
+      observation: "Product storage tanks are documented but loading/finishing equipment isn't in the asset list",
+      engineeringRationale: "Product leaves the plant somehow - truck loading, rail, pipeline, or pelletizing. This equipment exists but isn't captured.",
+      dataToCollect: "Document product disposition equipment: loading arms, metering skids, truck/rail scales, or polymer finishing (extruder, pelletizer)",
       affectedArea: "Storage",
       relatedAssets: byType.tanks.map(t => t.tagNumber || ""),
     });
-    processFlowQuestions.push("How does product leave the facility?");
+    processFlowQuestions.push("Product loading/shipping equipment not documented");
   }
 
   // ============================================================================
@@ -304,15 +304,15 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
   if (columnCount > 0 && reboilers.length < columnCount) {
     observations.push({
       severity: "critical",
-      category: "missing_equipment",
-      title: `Missing Reboilers: ${columnCount} columns but ${reboilers.length} reboilers`,
-      observation: `Found ${columnCount} distillation columns but only ${reboilers.length} reboilers`,
-      engineeringRationale: "Every distillation column needs a reboiler to provide vapor boilup. Without it, the column cannot separate.",
-      suggestedAction: `Add ${columnCount - reboilers.length} reboiler(s) to the separation section`,
+      category: "undocumented_equipment",
+      title: `Reboiler Data Gap: ${columnCount} columns but only ${reboilers.length} reboiler(s) documented`,
+      observation: `${columnCount} distillation columns in inventory but only ${reboilers.length} reboiler(s) - the other ${columnCount - reboilers.length} reboiler(s) exist but aren't documented`,
+      engineeringRationale: "Every distillation column has a reboiler. These heat exchangers exist in the plant but aren't in our asset list.",
+      dataToCollect: `Document the ${columnCount - reboilers.length} undocumented reboiler(s): tag numbers, duty, steam/hot oil service, associated column`,
       affectedArea: "Separation",
       relatedAssets: byType.columns.map(c => c.tagNumber || ""),
     });
-    energyBalanceGaps.push(`Separation section missing ${columnCount - reboilers.length} reboiler(s)`);
+    energyBalanceGaps.push(`${columnCount - reboilers.length} reboiler(s) not documented`);
   }
 
   // Check for reflux drums (one per column typically)
@@ -324,11 +324,11 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
   if (columnCount > 0 && refluxDrums.length < columnCount) {
     observations.push({
       severity: "major",
-      category: "missing_equipment",
-      title: `Missing Reflux Drums: ${columnCount} columns but ${refluxDrums.length} reflux drums`,
-      observation: `Found ${columnCount} columns but only ${refluxDrums.length} reflux drums`,
-      engineeringRationale: "Reflux drums are needed to separate vapor/liquid from condenser and provide surge capacity for reflux pump.",
-      suggestedAction: "Add reflux drums or verify columns are using partial condensers",
+      category: "undocumented_equipment",
+      title: `Reflux Drum Data Gap: ${columnCount} columns but only ${refluxDrums.length} reflux drum(s) documented`,
+      observation: `${columnCount} columns documented but only ${refluxDrums.length} reflux drum(s) in inventory`,
+      engineeringRationale: "Reflux drums/accumulators exist for each column. These vessels are in the plant but not captured in our data.",
+      dataToCollect: `Document reflux drums/accumulators for columns: tag numbers, volumes, associated column and condenser`,
       affectedArea: "Separation",
       relatedAssets: byType.columns.map(c => c.tagNumber || ""),
     });
@@ -368,10 +368,10 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
       observations.push({
         severity: "major",
         category: "redundancy",
-        title: `Critical Pump Without Spare: ${tag}`,
-        observation: `${pump.name} (${tag}) appears to be a single pump on critical service`,
-        engineeringRationale: "Critical pumps should have installed spares (A/B configuration) to avoid unit shutdown on pump failure.",
-        suggestedAction: `Add ${baseTag}B as installed spare`,
+        title: `Spare Pump Not Documented: ${tag}`,
+        observation: `${pump.name} (${tag}) shows as single pump - spare likely exists but isn't in inventory`,
+        engineeringRationale: "Critical pumps typically have installed spares (A/B configuration). The spare pump likely exists but isn't documented.",
+        dataToCollect: `Verify and document spare pump: ${baseTag}B tag, motor size, current status (installed spare vs warehouse)`,
         affectedArea: pump.engineering?.processArea || "Unknown",
         relatedAssets: [tag],
       });
@@ -396,14 +396,14 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
       observations.push({
         severity: "critical",
         category: "control_gap",
-        title: `Compressor ${tag} Missing Anti-Surge Control`,
-        observation: `No anti-surge controller found for compressor ${tag}`,
-        engineeringRationale: "Centrifugal compressors will surge if operating point moves left of surge line. Surge causes mechanical damage and can destroy the machine.",
-        suggestedAction: "Add anti-surge controller (ASC) with recycle valve",
+        title: `Compressor ${tag} Anti-Surge Control Not Documented`,
+        observation: `No anti-surge controller found in inventory for compressor ${tag}`,
+        engineeringRationale: "Centrifugal compressors have anti-surge protection - this control system exists but isn't in our asset list.",
+        dataToCollect: `Document anti-surge system for ${tag}: ASC controller tag, recycle valve tag, surge detection instruments`,
         affectedArea: area,
         relatedAssets: [tag],
       });
-      controlPhilosophyIssues.push(`Compressor ${tag} needs anti-surge protection`);
+      controlPhilosophyIssues.push(`Compressor ${tag} anti-surge system not documented`);
     }
 
     // Check for suction KO drum
@@ -416,11 +416,11 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
     if (!hasKoDrum) {
       observations.push({
         severity: "major",
-        category: "missing_equipment",
-        title: `Compressor ${tag} Missing Suction KO Drum`,
-        observation: `No suction knockout drum found upstream of ${tag}`,
-        engineeringRationale: "Liquid carryover into a compressor causes severe damage. KO drums remove entrained liquid.",
-        suggestedAction: "Add suction knockout drum with level control and high-level trip",
+        category: "undocumented_equipment",
+        title: `Compressor ${tag} Suction KO Drum Not Documented`,
+        observation: `No suction knockout drum found in inventory for ${tag}`,
+        engineeringRationale: "Compressors have suction KO drums to prevent liquid carryover. This vessel exists but isn't documented.",
+        dataToCollect: `Document suction KO drum for ${tag}: vessel tag, volume, level instruments, high-level trip`,
         affectedArea: area,
         relatedAssets: [tag],
       });
@@ -454,10 +454,10 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
         observations.push({
           severity: "major",
           category: "safety_gap",
-          title: `Exothermic Reactor ${tag} - No Emergency Cooling`,
-          observation: `Reactor ${tag} has normal cooling but no apparent emergency cooling system`,
-          engineeringRationale: "Exothermic reactors should have emergency cooling (quench, dump, or backup CW) independent of normal cooling in case of runaway.",
-          suggestedAction: "Add emergency quench system or backup cooling water supply",
+          title: `Exothermic Reactor ${tag} - Emergency Cooling Not Documented`,
+          observation: `Reactor ${tag} normal cooling is documented but emergency cooling system isn't in inventory`,
+          engineeringRationale: "Exothermic reactors have emergency cooling (quench, dump, or backup CW). This safety system exists but isn't captured.",
+          dataToCollect: `Document emergency cooling for ${tag}: quench system, emergency CW valves, dump system, associated SIF`,
           affectedArea: area,
           relatedAssets: [tag],
         });
@@ -475,10 +475,10 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
       observations.push({
         severity: "minor",
         category: "control_gap",
-        title: `Reactor ${tag} - No Composition Analyzer`,
-        observation: `No analyzer found for reactor ${tag} effluent`,
-        engineeringRationale: "Exothermic reactors benefit from effluent analysis to detect conversion changes before temperature excursions.",
-        suggestedAction: "Add online GC or other composition analyzer on reactor effluent",
+        title: `Reactor ${tag} - Composition Analyzer Not Documented`,
+        observation: `No analyzer documented for reactor ${tag} effluent`,
+        engineeringRationale: "Exothermic reactors typically have effluent analyzers. If one exists, it should be documented.",
+        dataToCollect: `Verify and document any analyzer on ${tag} effluent: GC, NIR, or other composition measurement`,
         affectedArea: area,
         relatedAssets: [tag],
       });
@@ -501,17 +501,17 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
       if (!hasSystem) {
         observations.push({
           severity: req.system === "Catalyst Feed" ? "critical" : "major",
-          category: "missing_unit",
-          title: `Missing ${req.system}`,
-          observation: `No ${req.system.toLowerCase()} system identified in inventory`,
-          engineeringRationale: req.description,
-          suggestedAction: `Add ${req.system.toLowerCase()} equipment or verify it exists under different naming`,
+          category: "undocumented_unit",
+          title: `${req.system} Not Documented`,
+          observation: `No ${req.system.toLowerCase()} equipment found in inventory - this system exists but isn't captured`,
+          engineeringRationale: req.description + ". This equipment is in the plant but not in our asset list.",
+          dataToCollect: `Document ${req.system.toLowerCase()} equipment: vessels, pumps, instruments, controllers`,
           affectedArea: "Process",
           relatedAssets: [],
         });
 
         if (req.system === "Recycle System") {
-          materialBalanceGaps.push("Unreacted monomer disposition not documented");
+          materialBalanceGaps.push("Recycle system equipment not documented");
         }
       }
     }
@@ -534,10 +534,10 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
       observations.push({
         severity: "minor",
         category: "control_gap",
-        title: `Vessel ${tag} Missing Level Indication`,
-        observation: `No level transmitter/controller found for ${tag}`,
-        engineeringRationale: "Every vessel with liquid inventory needs level measurement for safe operation.",
-        suggestedAction: `Add LT/LIC for ${tag}`,
+        title: `Vessel ${tag} Level Instrumentation Not Documented`,
+        observation: `No level transmitter found in inventory for ${tag}`,
+        engineeringRationale: "Vessels with liquid inventory have level measurement. This instrumentation exists but isn't linked in our data.",
+        dataToCollect: `Document level instrumentation for ${tag}: LT tag, LIC if controlled, high/low alarms`,
         affectedArea: vessel.engineering?.processArea || "Unknown",
         relatedAssets: [tag],
       });
@@ -557,22 +557,22 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
   if (!hasFlare) {
     observations.push({
       severity: "critical",
-      category: "missing_unit",
-      title: "No Flare System",
-      observation: "No flare stack or thermal oxidizer identified",
-      engineeringRationale: "Plants with pressure relief devices need a safe disposal system for relief gases. Venting to atmosphere is generally not permitted.",
-      suggestedAction: "Add flare system or verify reliefs vent to scrubber/thermal oxidizer",
+      category: "undocumented_unit",
+      title: "Flare/Relief System Not Documented",
+      observation: "No flare stack or thermal oxidizer in inventory - relief disposal system exists but isn't captured",
+      engineeringRationale: "Plants have flare or thermal oxidizer for relief disposal. This system exists but isn't in our asset list.",
+      dataToCollect: "Document relief disposal system: flare stack, pilots, KO drum, relief headers, thermal oxidizer if applicable",
       affectedArea: "Relief Systems",
       relatedAssets: [],
     });
   } else if (!hasKoDrum) {
     observations.push({
       severity: "major",
-      category: "missing_equipment",
-      title: "No Flare Knockout Drum",
-      observation: "Flare exists but no knockout drum found",
-      engineeringRationale: "Flare KO drums remove liquid from relief streams before the flare tip. Liquid in flare causes smoking, burning rain, and tip damage.",
-      suggestedAction: "Add flare knockout drum with level control and high-level alarm",
+      category: "undocumented_equipment",
+      title: "Flare Knockout Drum Not Documented",
+      observation: "Flare is documented but knockout drum isn't in inventory",
+      engineeringRationale: "Flare systems have KO drums to remove liquid. This vessel exists but isn't documented.",
+      dataToCollect: "Document flare KO drum: vessel tag, volume, level instruments, drain system",
       affectedArea: "Relief Systems",
       relatedAssets: [],
     });
@@ -595,14 +595,14 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
     observations.push({
       severity: "major",
       category: "redundancy",
-      title: "Insufficient Cooling Water Pump Redundancy",
-      observation: `${cwConsumers.length} cooling water consumers but only ${cwPumps.length} CW pump(s)`,
-      engineeringRationale: "Loss of cooling water can cause multiple process upsets simultaneously. Redundant pumps are essential.",
-      suggestedAction: "Add redundant cooling water pumps (typically N+1 or 2x100%)",
+      title: "Cooling Water Pump Redundancy Not Documented",
+      observation: `${cwConsumers.length} CW consumers documented but only ${cwPumps.length} CW pump(s) in inventory`,
+      engineeringRationale: "Cooling water systems have redundant pumps (N+1). Additional pumps likely exist but aren't documented.",
+      dataToCollect: "Document all cooling water pumps: operating and spare pumps, motor sizes, auto-start logic",
       affectedArea: "Utilities",
       relatedAssets: cwPumps.map(p => p.tagNumber || ""),
     });
-    energyBalanceGaps.push("Cooling water supply redundancy questionable");
+    energyBalanceGaps.push("Cooling water pump redundancy not fully documented");
   }
 
   // ============================================================================
@@ -614,19 +614,19 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
 
   let overallAssessment = "";
   if (criticalCount > 0) {
-    overallAssessment = `SIGNIFICANT GAPS: ${criticalCount} critical and ${majorCount} major issues identified. ` +
-      "This inventory is missing fundamental unit operations or safety systems that would be required to operate. " +
-      "Either equipment exists but isn't documented, or the inventory is substantially incomplete.";
+    overallAssessment = `DATA COLLECTION PRIORITY: ${criticalCount} critical and ${majorCount} major data gaps identified. ` +
+      "Key unit operations and equipment exist in the plant but aren't captured in our inventory. " +
+      "Focus data collection on the critical items first - these represent core process equipment.";
   } else if (majorCount > 3) {
-    overallAssessment = `INCOMPLETE: ${majorCount} major gaps identified. ` +
-      "The core process is represented but supporting systems appear missing. " +
-      "Recommend focused data collection on feed preparation, product finishing, and redundancy.";
+    overallAssessment = `INVENTORY GAPS: ${majorCount} data gaps identified. ` +
+      "Core process equipment is documented but supporting systems need data collection. " +
+      "Recommend focused effort on feed preparation, product finishing, redundant equipment, and safety systems.";
   } else if (majorCount > 0) {
-    overallAssessment = `REASONABLE: ${majorCount} gaps to address. ` +
-      "The major unit operations appear present. Some equipment redundancy and auxiliary systems need verification.";
+    overallAssessment = `GOOD PROGRESS: ${majorCount} minor gaps remaining. ` +
+      "Major unit operations are well documented. Some equipment redundancy and auxiliary systems need verification.";
   } else {
-    overallAssessment = "GOOD COVERAGE: No critical gaps identified in this analysis. " +
-      "Major unit operations and control systems appear adequately represented.";
+    overallAssessment = "COMPREHENSIVE: No significant data gaps identified. " +
+      "Major unit operations, control systems, and safety equipment appear well documented.";
   }
 
   return {
