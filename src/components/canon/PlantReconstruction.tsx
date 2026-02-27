@@ -13,9 +13,20 @@ interface EngineeringObservation {
   relatedAssets: string[];
 }
 
+interface CollectorPlacement {
+  location: string;
+  vlan: number | null;
+  reason: string;
+  assetsInScope: number;
+  protocolsExpected: string[];
+  priority: "critical" | "high" | "medium";
+  existingVisibility: "none" | "partial" | "good";
+}
+
 interface EngineeringAnalysis {
   plantType: string;
   observations: EngineeringObservation[];
+  collectorPlacements: CollectorPlacement[];
   processFlowQuestions: string[];
   materialBalanceGaps: string[];
   energyBalanceGaps: string[];
@@ -127,7 +138,7 @@ export default function PlantReconstructionPanel() {
   const [reconstruction, setReconstruction] = useState<PlantReconstruction | null>(null);
   const [engineering, setEngineering] = useState<EngineeringAnalysis | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<"engineering" | "process" | "control" | "safety" | "attack">("engineering");
+  const [activeTab, setActiveTab] = useState<"engineering" | "collectors" | "process" | "control" | "safety" | "attack">("engineering");
   const [error, setError] = useState<string | null>(null);
 
   const handleReconstruct = async () => {
@@ -154,6 +165,7 @@ export default function PlantReconstructionPanel() {
 
   const criticalCount = engineering?.observations.filter(o => o.severity === "critical").length || 0;
   const majorCount = engineering?.observations.filter(o => o.severity === "major").length || 0;
+  const collectorCount = engineering?.collectorPlacements?.length || 0;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow">
@@ -242,11 +254,11 @@ export default function PlantReconstructionPanel() {
                 </div>
                 <div className="text-xs text-gray-500">Safety Functions</div>
               </div>
-              <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-3 text-center">
-                <div className="text-2xl font-bold text-gray-600 dark:text-gray-300">
-                  {reconstruction.confidenceScore}%
+              <div className="bg-cyan-50 dark:bg-cyan-900/20 rounded-lg p-3 text-center">
+                <div className="text-2xl font-bold text-cyan-600">
+                  {collectorCount}
                 </div>
-                <div className="text-xs text-gray-500">Confidence</div>
+                <div className="text-xs text-gray-500">Collectors Needed</div>
               </div>
             </div>
           </div>
@@ -255,7 +267,8 @@ export default function PlantReconstructionPanel() {
           <div className="border-b border-gray-200 dark:border-gray-700">
             <div className="flex overflow-x-auto">
               {[
-                { id: "engineering", label: "Engineering Issues", count: engineering.observations.length },
+                { id: "engineering", label: "Data Gaps", count: engineering.observations.length },
+                { id: "collectors", label: "Collector Placement", count: collectorCount },
                 { id: "process", label: "Process Flow" },
                 { id: "control", label: "Control Loops" },
                 { id: "safety", label: "Safety Functions" },
@@ -401,6 +414,110 @@ export default function PlantReconstructionPanel() {
                     )}
                   </div>
                 )}
+              </div>
+            )}
+
+            {/* Collector Placement Tab */}
+            {activeTab === "collectors" && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h4 className="font-semibold text-gray-900 dark:text-white">
+                    OT Discovery Collector Placement
+                  </h4>
+                  <span className="text-sm text-gray-500">
+                    Where to deploy Claroty, Dragos, Nozomi, etc.
+                  </span>
+                </div>
+
+                {engineering.collectorPlacements && engineering.collectorPlacements.length > 0 ? (
+                  <div className="space-y-3">
+                    {engineering.collectorPlacements.map((placement, i) => (
+                      <div
+                        key={i}
+                        className={`border-l-4 rounded-r-lg p-4 ${
+                          placement.priority === "critical"
+                            ? "border-red-500 bg-red-50 dark:bg-red-900/20"
+                            : placement.priority === "high"
+                            ? "border-orange-500 bg-orange-50 dark:bg-orange-900/20"
+                            : "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20"
+                        }`}
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-1">
+                              <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                placement.priority === "critical"
+                                  ? "bg-red-600 text-white"
+                                  : placement.priority === "high"
+                                  ? "bg-orange-500 text-white"
+                                  : "bg-yellow-500 text-black"
+                              }`}>
+                                {placement.priority.toUpperCase()}
+                              </span>
+                              {placement.vlan && (
+                                <span className="text-xs bg-gray-200 dark:bg-gray-600 px-2 py-0.5 rounded">
+                                  VLAN {placement.vlan}
+                                </span>
+                              )}
+                              <span className={`text-xs px-2 py-0.5 rounded ${
+                                placement.existingVisibility === "none"
+                                  ? "bg-red-200 text-red-800"
+                                  : placement.existingVisibility === "partial"
+                                  ? "bg-yellow-200 text-yellow-800"
+                                  : "bg-green-200 text-green-800"
+                              }`}>
+                                {placement.existingVisibility === "none" ? "No Visibility" :
+                                 placement.existingVisibility === "partial" ? "Partial Visibility" : "Good Visibility"}
+                              </span>
+                            </div>
+                            <h5 className="font-semibold text-gray-900 dark:text-white text-lg">
+                              {placement.location}
+                            </h5>
+                            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                              {placement.reason}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-2xl font-bold text-gray-700 dark:text-gray-300">
+                              {placement.assetsInScope}
+                            </div>
+                            <div className="text-xs text-gray-500">assets</div>
+                          </div>
+                        </div>
+
+                        <div className="mt-3">
+                          <div className="text-xs text-gray-500 mb-1">Expected Protocols</div>
+                          <div className="flex flex-wrap gap-1">
+                            {placement.protocolsExpected.map((proto, j) => (
+                              <span
+                                key={j}
+                                className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded"
+                              >
+                                {proto}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-green-600">
+                    All network segments have adequate visibility coverage
+                  </div>
+                )}
+
+                <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <h5 className="font-medium text-blue-800 dark:text-blue-300 mb-2">
+                    Collector Deployment Notes
+                  </h5>
+                  <ul className="text-sm text-blue-700 dark:text-blue-400 space-y-1">
+                    <li>• <strong>SPAN/Mirror ports</strong> needed on switches for passive monitoring</li>
+                    <li>• <strong>Safety networks (SIS)</strong> may require read-only, one-way data diodes</li>
+                    <li>• <strong>Field networks</strong> may need multiple collectors due to physical distribution</li>
+                    <li>• Coordinate with OT/Control Systems team before deployment</li>
+                  </ul>
+                </div>
               </div>
             )}
 

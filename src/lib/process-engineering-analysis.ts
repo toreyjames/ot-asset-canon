@@ -28,9 +28,20 @@ export interface EngineeringObservation {
   relatedAssets: string[];
 }
 
+export interface CollectorPlacement {
+  location: string;
+  vlan: number | null;
+  reason: string;
+  assetsInScope: number;
+  protocolsExpected: string[];
+  priority: "critical" | "high" | "medium";
+  existingVisibility: "none" | "partial" | "good";
+}
+
 export interface ProcessEngineeringAnalysis {
   plantType: string;
   observations: EngineeringObservation[];
+  collectorPlacements: CollectorPlacement[];
   processFlowQuestions: string[];
   materialBalanceGaps: string[];
   energyBalanceGaps: string[];
@@ -629,18 +640,174 @@ export function analyzeProcessEngineering(assets: Partial<CanonAsset>[]): Proces
       "Major unit operations, control systems, and safety equipment appear well documented.";
   }
 
+  // Analyze collector placement needs
+  const collectorPlacements = analyzeCollectorPlacements(assets, byType);
+
   return {
     plantType,
     observations: observations.sort((a, b) => {
       const severityOrder = { critical: 0, major: 1, minor: 2, question: 3 };
       return severityOrder[a.severity] - severityOrder[b.severity];
     }),
+    collectorPlacements,
     processFlowQuestions,
     materialBalanceGaps,
     energyBalanceGaps,
     controlPhilosophyIssues,
     overallAssessment,
   };
+}
+
+// ============================================================================
+// COLLECTOR PLACEMENT ANALYSIS
+// ============================================================================
+
+function analyzeCollectorPlacements(
+  assets: Partial<CanonAsset>[],
+  categorized: AssetsByType
+): CollectorPlacement[] {
+  const placements: CollectorPlacement[] = [];
+
+  // Group assets by VLAN/network segment
+  const byVlan = new Map<number, Partial<CanonAsset>[]>();
+  const byArea = new Map<string, Partial<CanonAsset>[]>();
+
+  for (const asset of assets) {
+    const vlan = asset.network?.vlan;
+    if (vlan !== undefined) {
+      if (!byVlan.has(vlan)) byVlan.set(vlan, []);
+      byVlan.get(vlan)!.push(asset);
+    }
+
+    const area = asset.engineering?.processArea;
+    if (area) {
+      if (!byArea.has(area)) byArea.set(area, []);
+      byArea.get(area)!.push(asset);
+    }
+  }
+
+  // Network segment analysis
+  const networkSegments = [
+    { vlan: 20, name: "Field/Instrumentation Network (L1)", level: 1, protocols: ["HART-IP", "Modbus/TCP", "PROFINET", "EtherNet/IP"] },
+    { vlan: 30, name: "Safety Network (SIS)", level: 1.5, protocols: ["Safety protocols", "Modbus/TCP"] },
+    { vlan: 40, name: "Control Network (L2)", level: 2, protocols: ["Modbus/TCP", "EtherNet/IP", "OPC-UA", "CIP"] },
+    { vlan: 50, name: "Operations Network (L3)", level: 3, protocols: ["OPC-UA", "OPC-DA", "SQL", "HTTP"] },
+    { vlan: 60, name: "Wireless Network", level: 1, protocols: ["WirelessHART", "ISA100"] },
+  ];
+
+  for (const segment of networkSegments) {
+    const assetsInSegment = byVlan.get(segment.vlan) || [];
+
+    if (assetsInSegment.length === 0) {
+      // We expect assets here but don't have data - either no collector or no assets
+      continue;
+    }
+
+    // Check what network data we have - protocol data indicates collector coverage
+    // IPs alone could be from manual inventory entry
+    const assetsWithProtocols = assetsInSegment.filter(a => a.network?.protocols?.length);
+    // Check for controllers/critical assets
+    const criticalAssets = assetsInSegment.filter(a =>
+      a.assetType === "dcs_controller" ||
+      a.assetType === "plc" ||
+      a.assetType === "safety_controller" ||
+      a.security?.riskTier === "critical"
+    );
+
+    // Determine visibility level based on protocol data, not just IPs
+    // IPs can come from manual entry - protocol data means we have a collector
+    let existingVisibility: CollectorPlacement["existingVisibility"] = "none";
+
+    if (assetsWithProtocols.length > assetsInSegment.length * 0.7) {
+      existingVisibility = "good"; // Most assets have protocol data from collector
+    } else if (assetsWithProtocols.length > 0) {
+      existingVisibility = "partial"; // Some protocol data exists
+    }
+    // If we only have IPs but no protocol data, visibility is "none" -
+    // IPs could be from manual inventory, not from collector
+
+    // Determine priority
+    let priority: CollectorPlacement["priority"] = "medium";
+    if (segment.vlan === 30) {
+      priority = "critical"; // SIS network always critical
+    } else if (criticalAssets.length > 0 || segment.vlan === 40) {
+      priority = "critical"; // Control network or has critical assets
+    } else if (segment.vlan === 20 || segment.vlan === 50) {
+      priority = "high";
+    }
+
+    // Only recommend if visibility is not good
+    if (existingVisibility !== "good") {
+      let reason = "";
+      if (existingVisibility === "none") {
+        reason = `${assetsInSegment.length} assets documented but no traffic/protocol data captured. Deploy collector for network visibility.`;
+      } else {
+        reason = `${assetsInSegment.length} assets documented, ${assetsWithProtocols.length} have protocol data. Additional coverage recommended.`;
+      }
+
+      placements.push({
+        location: segment.name,
+        vlan: segment.vlan,
+        reason,
+        assetsInScope: assetsInSegment.length,
+        protocolsExpected: segment.protocols,
+        priority,
+        existingVisibility,
+      });
+    }
+  }
+
+  // Check for process areas without network visibility
+  for (const [area, areaAssets] of byArea) {
+    if (area === "Unknown" || area === "Data Center" || area === "Control Room") continue;
+
+    const layer1And2Assets = areaAssets.filter(a => a.layer === 1 || a.layer === 2);
+    const assetsWithNetwork = layer1And2Assets.filter(a => a.network?.vlan);
+
+    if (layer1And2Assets.length > 5 && assetsWithNetwork.length < layer1And2Assets.length * 0.3) {
+      placements.push({
+        location: `${area} - Field Devices`,
+        vlan: null,
+        reason: `${layer1And2Assets.length} field devices/instruments in ${area} but only ${assetsWithNetwork.length} have network data. Many may be 4-20mA but smart instruments should be captured.`,
+        assetsInScope: layer1And2Assets.length,
+        protocolsExpected: ["HART-IP", "Modbus", "PROFIBUS"],
+        priority: "high",
+        existingVisibility: assetsWithNetwork.length > 0 ? "partial" : "none",
+      });
+    }
+  }
+
+  // Check for remote/distributed areas
+  const fieldSwitches = assets.filter(a =>
+    a.assetType === "switch" &&
+    a.tagNumber?.includes("FLD")
+  );
+
+  if (fieldSwitches.length > 0) {
+    const coveredAreas = new Set(fieldSwitches.map(s => s.engineering?.processArea).filter(Boolean));
+    const allProcessAreas = new Set(assets.map(a => a.engineering?.processArea).filter(Boolean));
+
+    for (const area of allProcessAreas) {
+      if (!coveredAreas.has(area) && area !== "Control Room" && area !== "Data Center" && area !== "Network Infrastructure") {
+        const areaAssetCount = (byArea.get(area as string) || []).length;
+        if (areaAssetCount > 3) {
+          placements.push({
+            location: `${area} - Remote/Field`,
+            vlan: 20,
+            reason: `No field switch documented for ${area} area with ${areaAssetCount} assets. Verify network infrastructure coverage.`,
+            assetsInScope: areaAssetCount,
+            protocolsExpected: ["EtherNet/IP", "Modbus/TCP"],
+            priority: "medium",
+            existingVisibility: "none",
+          });
+        }
+      }
+    }
+  }
+
+  // Sort by priority
+  const priorityOrder = { critical: 0, high: 1, medium: 2 };
+  return placements.sort((a, b) => priorityOrder[a.priority] - priorityOrder[b.priority]);
 }
 
 // ============================================================================
