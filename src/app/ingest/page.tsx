@@ -12,6 +12,7 @@ type IngestionSource =
   | "manual";
 
 type DeploymentMode = "customer_cloud" | "hybrid_connector";
+type OperatingScope = "single_plant" | "company_portfolio" | "multi_tenant";
 
 interface IngestionResult {
   jobId: string;
@@ -33,6 +34,7 @@ const AGENT_STEPS = [
 export default function IngestPage() {
   const [source, setSource] = useState<IngestionSource>("claroty");
   const [deploymentMode, setDeploymentMode] = useState<DeploymentMode>("customer_cloud");
+  const [operatingScope, setOperatingScope] = useState<OperatingScope>("single_plant");
   const [autonomousRun, setAutonomousRun] = useState(true);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -125,6 +127,30 @@ export default function IngestPage() {
                   body="Plant-side gather + cloud orchestration"
                   active={deploymentMode === "hybrid_connector"}
                   onClick={() => setDeploymentMode("hybrid_connector")}
+                />
+              </div>
+            </div>
+
+            <div>
+              <div className="text-xs text-slate-400 mb-2">Operating Scope</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <ModeCard
+                  title="Single Plant"
+                  body="One facility baseline"
+                  active={operatingScope === "single_plant"}
+                  onClick={() => setOperatingScope("single_plant")}
+                />
+                <ModeCard
+                  title="Company Portfolio"
+                  body="Multi-plant under one owner"
+                  active={operatingScope === "company_portfolio"}
+                  onClick={() => setOperatingScope("company_portfolio")}
+                />
+                <ModeCard
+                  title="Multi-Tenant"
+                  body="Tenant-separated operations"
+                  active={operatingScope === "multi_tenant"}
+                  onClick={() => setOperatingScope("multi_tenant")}
                 />
               </div>
             </div>

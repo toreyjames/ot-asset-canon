@@ -104,6 +104,10 @@ export default function HomePage() {
               PlantTrace is the missing layer between what is on the plant floor and what ends up in your CMDB.
               We combine discovery tools, engineering files, and system logs into one trusted asset view your teams can act on.
             </p>
+            <p className="mt-3 text-slate-300 text-base max-w-xl">
+              Agent-guided deployment turns onboarding into a repeatable product workflow across single plants, portfolio rollouts,
+              and multi-tenant environments.
+            </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/inventory" className="px-5 py-3 rounded-md bg-cyan-400 text-slate-950 font-semibold hover:bg-cyan-300">
@@ -199,6 +203,24 @@ export default function HomePage() {
                 <p className="mt-2 text-sm text-slate-300">{option.body}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="mt-16 section-pop">
+          <h2 className="text-3xl font-semibold">Portfolio + Tenant Ready</h2>
+          <div className="mt-5 grid md:grid-cols-3 gap-4">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+              <div className="text-xs uppercase tracking-wide text-cyan-300">Single Plant</div>
+              <p className="mt-2 text-sm text-slate-300">Launch quickly with one facility and one operating team.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+              <div className="text-xs uppercase tracking-wide text-cyan-300">Company Portfolio</div>
+              <p className="mt-2 text-sm text-slate-300">Run multiple plants under one company baseline and reporting model.</p>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-5">
+              <div className="text-xs uppercase tracking-wide text-cyan-300">Multi-Tenant</div>
+              <p className="mt-2 text-sm text-slate-300">Support complex operators and service models with tenant-level separation.</p>
+            </div>
           </div>
         </section>
 
