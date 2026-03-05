@@ -46,6 +46,12 @@ export default function ConversionPanel() {
     return base + plantFactor + assetFactor;
   }, [plan, plants, assets]);
 
+  const engagementFit = useMemo(() => {
+    if (plan === "starter") return "Pilot Fit";
+    if (plan === "enterprise") return "Enterprise Fit";
+    return "Program Fit";
+  }, [plan]);
+
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setLoading(true);
@@ -81,8 +87,8 @@ export default function ConversionPanel() {
 
   return (
     <div className="rounded-2xl border border-cyan-700/50 bg-slate-950/80 p-5 md:p-6 shadow-xl shadow-cyan-900/20">
-      <h3 className="text-xl font-semibold text-white">Start Commercial Intake</h3>
-      <p className="mt-1 text-sm text-slate-300">Mostly click-based qualification. Fast for your team and ours.</p>
+      <h3 className="text-xl font-semibold text-white">Start Your PlantTrace Intake</h3>
+      <p className="mt-1 text-sm text-slate-300">Quick clicks, no heavy form fatigue.</p>
 
       <form className="mt-5 space-y-4" onSubmit={onSubmit}>
         <div className="grid md:grid-cols-3 gap-3">
@@ -150,12 +156,13 @@ export default function ConversionPanel() {
         />
 
         <div className="rounded-md border border-slate-700 bg-slate-900/80 p-3 text-sm">
-          <div className="text-slate-400">Estimated Monthly Platform</div>
-          <div className="mt-1 text-2xl font-semibold text-cyan-300">${estimatedMonthly.toLocaleString()}</div>
+          <div className="text-slate-400">Suggested Engagement Path</div>
+          <div className="mt-1 text-2xl font-semibold text-cyan-300">{engagementFit}</div>
+          <div className="mt-1 text-xs text-slate-400">Pricing is scoped after discovery and requirements alignment.</div>
         </div>
 
         {error && <div className="text-sm text-red-300">{error}</div>}
-        {submitted && <div className="text-sm text-emerald-300">Intake submitted. We will contact you with a scoped ROI plan.</div>}
+        {submitted && <div className="text-sm text-emerald-300">Intake submitted. We will follow up with a scoped plan and next steps.</div>}
 
         <div className="flex flex-wrap gap-2 pt-1 items-center">
           <button
