@@ -68,6 +68,12 @@ const PRICING = [
   },
 ];
 
+const ROI_SCENARIOS = [
+  { scope: "Pilot Plant", assets: "5,000 assets · 1 plant", annualValue: "$190k", payback: "3.2 months" },
+  { scope: "Regional Cluster", assets: "18,000 assets · 4 plants", annualValue: "$910k", payback: "2.1 months" },
+  { scope: "Enterprise Fleet", assets: "60,000 assets · 12 plants", annualValue: "$3.2M", payback: "1.4 months" },
+];
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#060b16] text-slate-100">
@@ -86,6 +92,9 @@ export default function HomePage() {
             <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-slate-500">
               Framework
             </Link>
+            <Link href="/roi" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-slate-500">
+              ROI Model
+            </Link>
             <Link href="/inventory" className="px-3 py-2 text-sm rounded-md bg-cyan-400 text-slate-950 font-medium hover:bg-cyan-300">
               Run Analysis
             </Link>
@@ -98,11 +107,11 @@ export default function HomePage() {
               OT Asset Assurance for Multi-Plant Operations
             </p>
             <h1 className="mt-5 text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
-              You Cannot Secure What You Cannot See
+              Stop Paying for Inventory Chaos
             </h1>
             <p className="mt-5 text-slate-300 text-lg max-w-xl">
-              PlantTrace gives you a trustworthy OT asset baseline first: exact inventory, evidence provenance,
-              and baseline security coverage across one plant or an entire portfolio.
+              PlantTrace reduces wasted labor, rework, and avoidable outage exposure by building a trustworthy OT
+              asset baseline with evidence provenance and coverage status.
             </p>
             <div className="mt-7 flex flex-wrap gap-3">
               <Link href="/inventory" className="px-5 py-3 rounded-md bg-cyan-400 text-slate-950 font-semibold hover:bg-cyan-300">
@@ -151,6 +160,15 @@ export default function HomePage() {
           </div>
         </section>
 
+        <section className="mt-16 rounded-2xl border border-rose-600/40 bg-rose-950/30 p-6">
+          <h2 className="text-2xl font-semibold">Cost of Not Solving This</h2>
+          <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
+            <Tag text="Repeated manual reconciliation every month" />
+            <Tag text="Coverage gaps discovered late after incidents" />
+            <Tag text="CMDB rework loops from low-confidence records" />
+          </div>
+        </section>
+
         <section className="mt-16">
           <h2 className="text-2xl font-semibold">How PlantTrace Works</h2>
           <p className="mt-2 text-slate-300">Context first, risk later. Inventory truth and coverage baseline are the foundation.</p>
@@ -174,6 +192,31 @@ export default function HomePage() {
             <Tag text="CMDB export and system-of-record sync" />
             <Tag text="Portfolio-level cross-plant view" />
             <Tag text="Supports contractor and owner workflows" />
+          </div>
+        </section>
+
+        <section className="mt-16">
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-2xl font-semibold">ROI Scales With Scope</h2>
+              <p className="mt-2 text-slate-300">As plants and assets increase, labor, outage, and rework savings compound.</p>
+            </div>
+            <Link href="/roi" className="px-4 py-2 rounded-md border border-cyan-500/60 text-cyan-200 hover:bg-cyan-500/10 text-sm">
+              Open ROI Calculator
+            </Link>
+          </div>
+          <div className="mt-5 grid md:grid-cols-3 gap-4">
+            {ROI_SCENARIOS.map((item) => (
+              <div key={item.scope} className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
+                <div className="text-sm text-slate-300">{item.scope}</div>
+                <div className="text-xs text-slate-400 mt-1">{item.assets}</div>
+                <div className="mt-4 text-3xl font-semibold text-cyan-300">{item.annualValue}</div>
+                <div className="text-xs text-slate-400 mt-1">Estimated annual net value</div>
+                <div className="mt-3 inline-flex px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 text-xs text-cyan-200">
+                  Payback: {item.payback}
+                </div>
+              </div>
+            ))}
           </div>
         </section>
 

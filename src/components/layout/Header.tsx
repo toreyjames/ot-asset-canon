@@ -144,6 +144,9 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
                 <Link href="/framework" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                   Framework
                 </Link>
+                <Link href="/roi" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                  ROI Model
+                </Link>
                 <Link href="/ingest" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
                   Data Sources
                 </Link>
