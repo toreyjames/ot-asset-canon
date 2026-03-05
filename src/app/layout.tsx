@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import PlantRealityCanvas from "@/components/layout/PlantRealityCanvas";
 
 export const metadata: Metadata = {
   title: "PlantTrace | OT Asset Assurance",
@@ -14,8 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased">
-        {children}
+      <body className="antialiased relative overflow-x-hidden">
+        <PlantRealityCanvas />
+        <div className="relative z-10">
+          {children}
+        </div>
       </body>
     </html>
   );
