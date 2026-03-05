@@ -70,11 +70,8 @@ export default function HomePage() {
         <header className="pt-6 flex items-center justify-between">
           <PlantTraceLogo />
           <div className="flex items-center gap-2">
-            <Link href="/login/customer" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Customer Login
-            </Link>
-            <Link href="/login/admin" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Admin Login
+            <Link href="/login" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Login
             </Link>
             <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
               Framework
