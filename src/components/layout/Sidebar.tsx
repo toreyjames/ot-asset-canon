@@ -112,36 +112,30 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
   };
 
   return (
-    <div className="flex h-full w-64 flex-col bg-white border-r border-gray-200">
-      {/* Logo */}
-      <div className="flex h-16 shrink-0 items-center px-6 border-b border-gray-200">
+    <div className="m-3 mr-0 flex h-[calc(100vh-1.5rem)] w-72 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/85 shadow-sm backdrop-blur-sm">
+      <div className="flex h-16 shrink-0 items-center px-5 border-b border-slate-200/80 bg-gradient-to-r from-cyan-50 to-blue-50">
         <Link href="/" className="flex items-center gap-2">
           <div className="flex items-center gap-0.5">
-            <span className="w-1.5 h-4 rounded-sm bg-blue-600"></span>
+            <span className="w-1.5 h-4 rounded-sm bg-cyan-500"></span>
             <span className="w-1.5 h-4 rounded-sm bg-blue-500"></span>
-            <span className="w-1.5 h-4 rounded-sm bg-blue-400"></span>
+            <span className="w-1.5 h-4 rounded-sm bg-indigo-500"></span>
           </div>
-          <span className="text-lg font-semibold text-gray-900">PlantTrace</span>
+          <span className="text-lg font-semibold text-slate-900 tracking-tight">PlantTrace</span>
         </Link>
       </div>
 
-      {/* Site indicator */}
       {siteName && (
-        <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
-          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">Current Site</div>
-          <div className="mt-1 flex items-center justify-between">
-            <span className="text-sm font-semibold text-gray-900 truncate">{siteName}</span>
-            <Link
-              href="/"
-              className="text-xs text-blue-600 hover:text-blue-700 font-medium"
-            >
+        <div className="px-4 py-3 border-b border-slate-200/80 bg-slate-50/70">
+          <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Current Site</div>
+          <div className="mt-1 flex items-center justify-between gap-2">
+            <span className="text-sm font-semibold text-slate-900 truncate">{siteName}</span>
+            <Link href="/" className="text-xs text-cyan-700 hover:text-cyan-900 font-medium whitespace-nowrap">
               Change
             </Link>
           </div>
         </div>
       )}
 
-      {/* Navigation */}
       <nav className="flex flex-1 flex-col px-4 py-4">
         <ul role="list" className="flex flex-1 flex-col gap-1">
           {navigation.map((item) => (
@@ -150,11 +144,11 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
                 href={getHref(item.href)}
                 className={`group flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive(item.href)
-                    ? "bg-blue-50 text-blue-700"
-                    : "text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                    ? "bg-cyan-50 text-cyan-800"
+                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <span className={isActive(item.href) ? "text-blue-600" : "text-gray-400 group-hover:text-gray-600"}>
+                <span className={isActive(item.href) ? "text-cyan-700" : "text-slate-400 group-hover:text-slate-600"}>
                   {item.icon}
                 </span>
                 {item.name}
@@ -163,8 +157,7 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
           ))}
         </ul>
 
-        {/* Secondary navigation */}
-        <div className="mt-auto pt-4 border-t border-gray-200">
+        <div className="mt-auto pt-4 border-t border-slate-200/80">
           <ul role="list" className="flex flex-col gap-1">
             {secondaryNavigation.map((item) => (
               <li key={item.name}>
@@ -172,11 +165,11 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
                   href={getHref(item.href)}
                   className={`group flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive(item.href)
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+                      ? "bg-cyan-50 text-cyan-800"
+                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                   }`}
                 >
-                  <span className={isActive(item.href) ? "text-blue-600" : "text-gray-400 group-hover:text-gray-500"}>
+                  <span className={isActive(item.href) ? "text-cyan-700" : "text-slate-400 group-hover:text-slate-500"}>
                     {item.icon}
                   </span>
                   {item.name}

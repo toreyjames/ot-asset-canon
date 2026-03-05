@@ -1,290 +1,242 @@
-import { LAYER_NAMES, LAYER_DESCRIPTIONS, type CanonLayer } from "@/types/canon";
+import Link from "next/link";
 
-export default function Dashboard() {
-  const layers: CanonLayer[] = [6, 5, 4, 3, 2, 1];
+const PROBLEMS = [
+  {
+    title: "Unknown Asset Reality",
+    body: "Most plants cannot answer exact asset count, location, and ownership with evidence.",
+  },
+  {
+    title: "No Central Health Picture",
+    body: "Coverage signals live in separate OT, engineering, and security tools with no shared truth.",
+  },
+  {
+    title: "CMDB Pipeline Breaks",
+    body: "Low-confidence inventory data fails downstream governance, lifecycle, and compliance workflows.",
+  },
+];
 
-  const stats = {
-    totalAssets: 1247,
-    evidencedAssets: 1098,
-    coveredAssets: 942,
-    uncoveredAssets: 305,
-    plantsConnected: 6,
-  };
+const STEPS = [
+  {
+    step: "1",
+    title: "Ingest",
+    body: "Connect OT discovery, engineering exports, endpoint tools, and manual sources.",
+  },
+  {
+    step: "2",
+    title: "Rebuild",
+    body: "Generate a plant-level map with line/unit context and asset evidence provenance.",
+  },
+  {
+    step: "3",
+    title: "Validate",
+    body: "Measure completeness and continuity including redundancy and baseline operability checks.",
+  },
+  {
+    step: "4",
+    title: "Cover",
+    body: "Show what is securable, what is covered, and what still needs baseline controls.",
+  },
+];
 
+const PRICING = [
+  {
+    tier: "Starter",
+    price: "$2,500",
+    sub: "per month",
+    audience: "Single pilot plant",
+    features: ["Up to 5,000 assets", "Core connectors", "Inventory + coverage baseline", "CMDB export"],
+    cta: "Start Pilot",
+    featured: false,
+  },
+  {
+    tier: "Growth",
+    price: "$8,500",
+    sub: "per month",
+    audience: "Multi-plant operators",
+    features: ["Up to 50,000 assets", "Portfolio dashboard", "Agentic continuity checks", "Priority support"],
+    cta: "Book Demo",
+    featured: true,
+  },
+  {
+    tier: "Enterprise",
+    price: "Custom",
+    sub: "annual contract",
+    audience: "Critical infrastructure / public sector",
+    features: ["Unlimited plants", "SSO + RBAC + audit logs", "Private deployment options", "Program support"],
+    cta: "Talk to Sales",
+    featured: false,
+  },
+];
+
+export default function HomePage() {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-      <section className="relative overflow-hidden rounded-2xl border border-slate-800 bg-slate-950 text-white p-8 md:p-10">
-        <PlantMapBackground />
+    <div className="min-h-screen bg-[#060b16] text-slate-100">
+      <div className="absolute inset-0 pointer-events-none opacity-70">
+        <div className="absolute -top-20 -left-20 h-72 w-72 rounded-full bg-cyan-500/20 blur-3xl" />
+        <div className="absolute top-40 right-0 h-80 w-80 rounded-full bg-blue-600/20 blur-3xl" />
+      </div>
 
-        <div className="relative z-10 max-w-3xl">
-          <div className="inline-flex items-center gap-2 rounded-full border border-cyan-500/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
-            Asset Assurance for Critical Infrastructure
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
+        <header className="pt-6 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-md bg-gradient-to-br from-cyan-300 to-blue-500" />
+            <div className="font-semibold text-lg tracking-tight">PlantTrace</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-slate-500">
+              Framework
+            </Link>
+            <Link href="/inventory" className="px-3 py-2 text-sm rounded-md bg-cyan-400 text-slate-950 font-medium hover:bg-cyan-300">
+              Run Analysis
+            </Link>
+          </div>
+        </header>
+
+        <section className="mt-14 grid lg:grid-cols-2 gap-10 items-center">
+          <div>
+            <p className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
+              OT Asset Assurance for Multi-Plant Operations
+            </p>
+            <h1 className="mt-5 text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
+              You Cannot Secure What You Cannot See
+            </h1>
+            <p className="mt-5 text-slate-300 text-lg max-w-xl">
+              PlantTrace gives you a trustworthy OT asset baseline first: exact inventory, evidence provenance,
+              and baseline security coverage across one plant or an entire portfolio.
+            </p>
+            <div className="mt-7 flex flex-wrap gap-3">
+              <Link href="/inventory" className="px-5 py-3 rounded-md bg-cyan-400 text-slate-950 font-semibold hover:bg-cyan-300">
+                Start With a Site
+              </Link>
+              <Link href="/framework" className="px-5 py-3 rounded-md border border-slate-600 hover:border-slate-400">
+                See How It Works
+              </Link>
+            </div>
+            <div className="mt-8 grid grid-cols-3 gap-3 text-sm">
+              <Metric label="Asset Confidence" value="94%" />
+              <Metric label="Coverage Gaps Found" value="29%" />
+              <Metric label="CMDB Ready Assets" value="81%" />
+            </div>
           </div>
 
-          <h1 className="mt-4 text-4xl md:text-5xl font-semibold tracking-tight">
-            You Cannot Secure What You Cannot See
-          </h1>
-
-          <p className="mt-4 text-slate-300 text-base md:text-lg max-w-2xl">
-            PlantTrace builds an evidence-backed OT asset baseline across plants, verifies baseline security coverage,
-            and feeds trusted records into your CMDB.
-          </p>
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            <a
-              href="/inventory"
-              className="px-4 py-2 rounded-md bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-medium text-sm"
-            >
-              Run Asset Analysis
-            </a>
-            <a
-              href="/framework"
-              className="px-4 py-2 rounded-md border border-slate-600 hover:border-slate-400 text-slate-200 text-sm"
-            >
-              Read Framework v1
-            </a>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+            <div className="text-sm text-slate-300 mb-3">Live Plant Reconstruction Snapshot</div>
+            <div className="relative h-[320px] rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 overflow-hidden border border-slate-800">
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 620 320" fill="none" aria-hidden>
+                <path d="M20 240 L130 240 L130 170 L250 170 L250 220 L370 220 L370 140 L500 140 L500 205 L600 205" stroke="#67e8f9" strokeWidth="2" strokeDasharray="5 7" />
+                <path d="M30 280 L170 280 L170 240 L320 240 L320 285 L470 285 L470 230 L590 230" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 6" />
+                {[[130,240],[250,170],[370,220],[500,140],[170,280],[320,240],[470,285]].map(([x,y],i)=>(
+                  <g key={i}>
+                    <circle cx={x} cy={y} r="11" fill="#020617" stroke="#22d3ee" strokeWidth="2"/>
+                    <circle cx={x} cy={y} r="3.5" fill="#22d3ee"/>
+                  </g>
+                ))}
+              </svg>
+              <div className="absolute top-3 left-3 text-xs px-2 py-1 rounded bg-slate-800/90 border border-slate-600">2,400 assets reconstructed</div>
+              <div className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-slate-800/90 border border-slate-600">486 baseline gaps</div>
+              <div className="absolute bottom-3 left-3 text-xs px-2 py-1 rounded bg-green-500/20 border border-green-500/40 text-green-200">Coverage baseline calculated</div>
+            </div>
           </div>
+        </section>
 
-          <div className="mt-6 grid grid-cols-2 md:grid-cols-5 gap-2">
-            <HeroMetric label="Assets" value={stats.totalAssets.toLocaleString()} />
-            <HeroMetric label="Evidence-backed" value={stats.evidencedAssets.toLocaleString()} />
-            <HeroMetric label="Covered" value={stats.coveredAssets.toLocaleString()} />
-            <HeroMetric label="Gaps" value={stats.uncoveredAssets.toLocaleString()} />
-            <HeroMetric label="Plants" value={stats.plantsConnected.toString()} />
-          </div>
-        </div>
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-        <ProblemCard
-          tone="primary"
-          title="Primary Problem"
-          headline="No trustworthy OT asset inventory"
-          body="Teams cannot reliably answer how many assets exist, where they are, and what should be protected."
-        />
-        <ProblemCard
-          tone="secondary"
-          title="Secondary Problem"
-          headline="No central view of asset health"
-          body="Evidence, telemetry, and coverage are fragmented across plants and point tools."
-        />
-        <ProblemCard
-          tone="secondary"
-          title="Long-Term Problem"
-          headline="Weak path to system of record"
-          body="Without clean inventory provenance, CMDB synchronization and lifecycle governance fail."
-        />
-      </section>
-
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Plant Reconstruction Stack</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-6">
-            Rebuild plant understanding from physics and operations upward, then evaluate baseline coverage from that truth.
-          </p>
-          <div className="canon-stack">
-            {layers.map((layer) => (
-              <LayerCard key={layer} layer={layer} />
+        <section className="mt-16">
+          <h2 className="text-2xl font-semibold">The Problems We Solve</h2>
+          <div className="mt-5 grid md:grid-cols-3 gap-4">
+            {PROBLEMS.map((problem) => (
+              <div key={problem.title} className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
+                <h3 className="font-semibold text-lg">{problem.title}</h3>
+                <p className="mt-2 text-sm text-slate-300">{problem.body}</p>
+              </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="space-y-6">
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Asset Assurance Queries</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Focus on inventory truth, provenance, and coverage baseline.
-            </p>
-            <div className="space-y-2">
-              <QuickQuery query="How many assets are currently in scope for Houston Plant?" />
-              <QuickQuery query="Which assets are confirmed by two or more independent sources?" />
-              <QuickQuery query="Which assets do not have OT discovery or endpoint/security coverage?" />
-              <QuickQuery query="Show assets ready for CMDB sync with high-confidence provenance." />
+        <section className="mt-16">
+          <h2 className="text-2xl font-semibold">How PlantTrace Works</h2>
+          <p className="mt-2 text-slate-300">Context first, risk later. Inventory truth and coverage baseline are the foundation.</p>
+          <div className="mt-5 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {STEPS.map((item) => (
+              <div key={item.step} className="rounded-xl border border-slate-800 bg-slate-900/70 p-5">
+                <div className="text-cyan-300 text-sm font-semibold">Step {item.step}</div>
+                <h3 className="mt-1 font-semibold text-lg">{item.title}</h3>
+                <p className="mt-2 text-sm text-slate-300">{item.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="mt-16 rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+          <h2 className="text-2xl font-semibold">Built for Public Sector and Critical Infrastructure</h2>
+          <div className="mt-4 grid md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+            <Tag text="Multi-tenant site isolation" />
+            <Tag text="Role-based access + audit logs" />
+            <Tag text="Evidence provenance per asset" />
+            <Tag text="CMDB export and system-of-record sync" />
+            <Tag text="Portfolio-level cross-plant view" />
+            <Tag text="Supports contractor and owner workflows" />
+          </div>
+        </section>
+
+        <section className="mt-16">
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <div>
+              <h2 className="text-2xl font-semibold">Pricing</h2>
+              <p className="mt-2 text-slate-300">Start with one plant. Expand to portfolio governance.</p>
             </div>
-            <a
-              href="/ai"
-              className="mt-4 inline-block w-full text-center bg-layer5 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-            >
-              Open AI Query Interface
-            </a>
+            <div className="text-xs text-slate-400">Illustrative pricing for planning</div>
           </div>
 
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Baseline Coverage Snapshot</h2>
-            <div className="space-y-3">
-              <CoverageBar label="OT Discovery Coverage" value={88} />
-              <CoverageBar label="Endpoint Control Coverage (Tanium)" value={71} />
-              <CoverageBar label="Visibility Coverage (Qualys)" value={64} />
-              <CoverageBar label="Engineering Context Coverage" value={82} />
-            </div>
-            <a
-              href="/sites/houston-plant/coverage"
-              className="mt-4 inline-block w-full text-center border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 px-4 py-2 rounded-md text-sm font-medium"
-            >
-              View Site Coverage
-            </a>
+          <div className="mt-5 grid lg:grid-cols-3 gap-4">
+            {PRICING.map((plan) => (
+              <div
+                key={plan.tier}
+                className={`rounded-xl p-5 border ${plan.featured ? "border-cyan-400 bg-cyan-500/10" : "border-slate-800 bg-slate-900/70"}`}
+              >
+                <div className="text-sm text-slate-300">{plan.tier}</div>
+                <div className="mt-1 text-3xl font-semibold">{plan.price}</div>
+                <div className="text-xs text-slate-400">{plan.sub}</div>
+                <p className="mt-3 text-sm text-slate-300">{plan.audience}</p>
+                <ul className="mt-4 space-y-2 text-sm text-slate-200">
+                  {plan.features.map((f) => (
+                    <li key={f}>• {f}</li>
+                  ))}
+                </ul>
+                <button className={`mt-5 w-full py-2.5 rounded-md text-sm font-semibold ${plan.featured ? "bg-cyan-400 text-slate-950" : "bg-slate-800 hover:bg-slate-700"}`}>
+                  {plan.cta}
+                </button>
+              </div>
+            ))}
           </div>
-        </div>
-      </section>
+        </section>
 
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700 p-6">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Public Sector Ready</h2>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          Designed to support critical infrastructure operators, including public sector and defense-adjacent environments.
-        </p>
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          <ReadinessItem title="Tenant Isolation" text="Organization and site-level data separation." />
-          <ReadinessItem title="RBAC + Auditability" text="Role-based access and full event traceability." />
-          <ReadinessItem title="Data Governance" text="Retention controls and CMDB export pathways." />
-          <ReadinessItem title="Evidence Provenance" text="Every asset assertion linked to source evidence." />
-          <ReadinessItem title="Coverage Baseline" text="Securable assets tracked as covered/uncovered." />
-          <ReadinessItem title="Multi-Plant Portfolio" text="Single operating picture across facilities." />
-        </div>
-      </section>
-
-      <section className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Problem + Framework</h2>
-        <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          We solve one upstream problem first: establish trustworthy asset reality across one plant or many plants.
-          The framework is Count, Prove, Cover: count assets, prove each with evidence, and verify baseline controls.
-        </p>
-        <a
-          href="/framework"
-          className="mt-5 inline-block px-4 py-2 rounded-md bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium"
-        >
-          Read Framework v1
-        </a>
-      </section>
+        <section className="mt-16 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-blue-900/40 p-8">
+          <h2 className="text-3xl font-semibold">Start With One Plant This Week</h2>
+          <p className="mt-3 text-slate-300 max-w-2xl">
+            Connect your first data sources, generate a trusted baseline, and identify exactly where coverage needs to improve.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Link href="/inventory" className="px-5 py-3 rounded-md bg-cyan-400 text-slate-950 font-semibold hover:bg-cyan-300">
+              Run First Analysis
+            </Link>
+            <Link href="/framework" className="px-5 py-3 rounded-md border border-slate-600 hover:border-slate-400">
+              Review Framework
+            </Link>
+          </div>
+        </section>
+      </div>
     </div>
   );
 }
 
-function PlantMapBackground() {
+function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="absolute inset-0 pointer-events-none">
-      <div className="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-cyan-500/15 blur-3xl" />
-      <div className="absolute -bottom-28 right-10 h-80 w-80 rounded-full bg-blue-600/15 blur-3xl" />
-      <svg className="absolute inset-0 h-full w-full opacity-45" viewBox="0 0 1200 500" fill="none" aria-hidden>
-        <path d="M40 320 L220 320 L220 240 L420 240 L420 300 L620 300 L620 210 L840 210 L840 270 L1140 270" stroke="#67e8f9" strokeWidth="2" strokeDasharray="4 6" />
-        <path d="M80 380 L280 380 L280 330 L500 330 L500 390 L760 390 L760 320 L1060 320" stroke="#38bdf8" strokeWidth="2" strokeDasharray="3 7" />
-        {[
-          [220, 320], [420, 240], [620, 300], [840, 210], [280, 380], [500, 330], [760, 390],
-        ].map(([x, y], i) => (
-          <g key={i}>
-            <circle cx={x} cy={y} r="9" fill="#0f172a" stroke="#67e8f9" strokeWidth="2" />
-            <circle cx={x} cy={y} r="3" fill="#67e8f9" />
-          </g>
-        ))}
-      </svg>
-    </div>
-  );
-}
-
-function HeroMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-md border border-slate-700/80 bg-slate-900/70 px-3 py-2">
+    <div className="rounded-md border border-slate-700 bg-slate-900/60 px-3 py-2">
       <div className="text-[11px] uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="text-lg font-semibold text-white">{value}</div>
+      <div className="text-lg font-semibold">{value}</div>
     </div>
   );
 }
 
-function ProblemCard({
-  tone,
-  title,
-  headline,
-  body,
-}: {
-  tone: "primary" | "secondary";
-  title: string;
-  headline: string;
-  body: string;
-}) {
-  const toneStyles =
-    tone === "primary"
-      ? "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800"
-      : "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800";
-
-  const labelTone = tone === "primary" ? "text-red-700 dark:text-red-300" : "text-amber-700 dark:text-amber-300";
-
-  return (
-    <div className={`rounded-lg border p-4 ${toneStyles}`}>
-      <div className={`text-xs font-semibold uppercase tracking-wide ${labelTone}`}>{title}</div>
-      <div className="mt-1 text-lg font-semibold text-gray-900 dark:text-white">{headline}</div>
-      <p className="mt-2 text-sm text-gray-700 dark:text-gray-300">{body}</p>
-    </div>
-  );
-}
-
-function ReadinessItem({ title, text }: { title: string; text: string }) {
-  return (
-    <div className="rounded border border-gray-200 dark:border-gray-700 p-3">
-      <div className="text-sm font-semibold text-gray-900 dark:text-white">{title}</div>
-      <div className="mt-1 text-xs text-gray-600 dark:text-gray-400">{text}</div>
-    </div>
-  );
-}
-
-function LayerCard({ layer }: { layer: CanonLayer }) {
-  const layerColors: Record<CanonLayer, string> = {
-    1: "layer-1",
-    2: "layer-2",
-    3: "layer-3",
-    4: "layer-4",
-    5: "layer-5",
-    6: "layer-6",
-  };
-
-  const assetCounts: Record<CanonLayer, number> = {
-    1: 47,
-    2: 312,
-    3: 89,
-    4: 156,
-    5: 423,
-    6: 220,
-  };
-
-  return (
-    <a href={`/explorer?layer=${layer}`} className={`canon-layer ${layerColors[layer]} cursor-pointer`}>
-      <div className="flex justify-between items-center">
-        <div>
-          <span className="text-sm opacity-75">Layer {layer}</span>
-          <h3 className="font-semibold">{LAYER_NAMES[layer]}</h3>
-          <p className="text-sm opacity-75 mt-1">{LAYER_DESCRIPTIONS[layer]}</p>
-        </div>
-        <div className="text-right">
-          <span className="text-2xl font-bold">{assetCounts[layer]}</span>
-          <p className="text-sm opacity-75">assets</p>
-        </div>
-      </div>
-    </a>
-  );
-}
-
-function QuickQuery({ query }: { query: string }) {
-  return (
-    <a
-      href={`/ai?q=${encodeURIComponent(query)}`}
-      className="block text-sm text-gray-600 dark:text-gray-400 hover:text-layer5 dark:hover:text-blue-400 truncate"
-    >
-      &quot;{query}&quot;
-    </a>
-  );
-}
-
-function CoverageBar({ label, value }: { label: string; value: number }) {
-  return (
-    <div>
-      <div className="flex justify-between text-sm mb-1">
-        <span className="text-gray-600 dark:text-gray-400">{label}</span>
-        <span className="font-medium text-gray-800 dark:text-gray-200">{value}%</span>
-      </div>
-      <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-        <div
-          className={`h-full rounded-full ${value >= 80 ? "bg-green-500" : value >= 65 ? "bg-amber-500" : "bg-red-500"}`}
-          style={{ width: `${value}%` }}
-        />
-      </div>
-    </div>
-  );
+function Tag({ text }: { text: string }) {
+  return <div className="rounded-md border border-slate-700 bg-slate-950/60 px-3 py-2">{text}</div>;
 }

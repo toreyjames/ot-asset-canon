@@ -25,7 +25,7 @@ export default function AppShell({
   showSidebar = true,
 }: AppShellProps) {
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-transparent app-grid-bg">
       {/* Sidebar */}
       {showSidebar && (
         <Sidebar
@@ -43,7 +43,7 @@ export default function AppShell({
         />
 
         {/* Page content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto px-3 pb-3">
           {children}
         </main>
       </div>
