@@ -88,13 +88,13 @@ export default function HomePage() {
               Built for OT teams that want momentum, not friction
             </p>
             <h1 className="mt-5 text-4xl md:text-7xl font-semibold tracking-tight leading-[0.92] headline-display">
-              Serious Problem.
+              Reindustrialize With Clarity.
               <br />
-              Sharp Experience.
+              Plant Floor To CMDB.
             </h1>
             <p className="mt-5 text-slate-300 text-lg max-w-xl">
-              PlantTrace helps you rebuild plant reality from evidence, then turn that clarity into faster execution across operations,
-              engineering, and security.
+              PlantTrace is the operational data layer between real plant assets and enterprise systems. We rebuild what exists,
+              prove what is secureable, and deliver clean structure downstream to CMDB and governance teams.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -116,7 +116,14 @@ export default function HomePage() {
           <HeroPlantMap />
         </section>
 
-        <Ribbon text="PlantTrace turns operational complexity into a workflow your teams actually enjoy running." />
+        <Ribbon
+          items={[
+            "Reindustrialize with evidence-backed plant visibility",
+            "The operational layer between OT reality and CMDB systems",
+            "Map what exists, prove what is securable, then scale",
+            "One shared truth for operations, engineering, and security",
+          ]}
+        />
 
         <section className="mt-14 section-pop">
           <ConversionPanel />
@@ -204,12 +211,15 @@ export default function HomePage() {
   );
 }
 
-function Ribbon({ text }: { text: string }) {
+function Ribbon({ items }: { items: string[] }) {
+  const loop = [...items, ...items];
   return (
     <div className="mt-12 overflow-hidden rounded-xl border border-cyan-500/30 bg-cyan-500/10 py-2">
       <div className="animate-marquee whitespace-nowrap text-sm font-medium text-cyan-100 tracking-wide">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <span key={i} className="mx-8">{text}</span>
+        {loop.map((item, i) => (
+          <span key={`${item}-${i}`} className="mx-8">
+            {item}
+          </span>
         ))}
       </div>
     </div>
