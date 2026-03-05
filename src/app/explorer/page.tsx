@@ -23,7 +23,7 @@ export default function ExplorerPage() {
   return <ExplorerContent />;
 }
 
-// Sample data for demo - in production this comes from the Canon database
+// Sample data for demo - in production this comes from the PlantTrace database
 const SAMPLE_ASSETS: Partial<CanonAsset>[] = [
   {
     id: "1",
@@ -226,10 +226,10 @@ function ExplorerPageInner() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          Canon Explorer
+          PlantTrace Explorer
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Browse and search assets across all Canon layers
+          Browse and search assets across all PlantTrace layers
         </p>
       </div>
 

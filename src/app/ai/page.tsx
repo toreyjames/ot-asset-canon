@@ -98,11 +98,11 @@ function AIQueryPageInner() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          AI-Powered Canon Query
+          AI-Powered PlantTrace Query
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
           Ask questions about your plant using natural language. The AI has access to
-          Canon asset data and physics calculation tools.
+          PlantTrace asset data and physics calculation tools.
         </p>
       </div>
 
@@ -143,7 +143,7 @@ function AIQueryPageInner() {
                     style={{ animationDelay: "0.2s" }}
                   />
                 </div>
-                <span className="text-sm">Analyzing Canon data...</span>
+                <span className="text-sm">Analyzing PlantTrace data...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -176,10 +176,10 @@ function AIQueryPageInner() {
           Available Tools
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          <ToolBadge name="searchAssets" category="Canon" />
-          <ToolBadge name="getAssetRelationships" category="Canon" />
-          <ToolBadge name="getAttackPaths" category="Canon" />
-          <ToolBadge name="getConsequenceChain" category="Canon" />
+          <ToolBadge name="searchAssets" category="PlantTrace" />
+          <ToolBadge name="getAssetRelationships" category="PlantTrace" />
+          <ToolBadge name="getAttackPaths" category="PlantTrace" />
+          <ToolBadge name="getConsequenceChain" category="PlantTrace" />
           <ToolBadge name="adiabaticTemperatureRise" category="Thermo" />
           <ToolBadge name="timeToMaximumRate" category="Thermo" />
           <ToolBadge name="reliefValveSizing" category="Fluid" />
@@ -242,7 +242,7 @@ function MessageBubble({ message }: { message: Message }) {
 
 function ToolBadge({ name, category }: { name: string; category: string }) {
   const categoryColors: Record<string, string> = {
-    Canon: "bg-layer5/20 text-layer5",
+    PlantTrace: "bg-layer5/20 text-layer5",
     Thermo: "bg-layer1/20 text-layer1",
     Fluid: "bg-layer2/20 text-layer2",
     Consequence: "bg-layer3/20 text-layer3",

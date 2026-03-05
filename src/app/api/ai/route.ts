@@ -14,14 +14,14 @@ const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Canon Query Tools - Allow AI to query the Canon database
+// PlantTrace Query Tools - Allow AI to query the PlantTrace database
 const canonQueryTools = {
   searchAssets: tool({
     description:
-      "Search for assets in the Canon by tag number, name, type, layer, or risk tier. Returns asset details with engineering, control system, network, and security context.",
+      "Search for assets in PlantTrace by tag number, name, type, layer, or risk tier. Returns asset details with engineering, control system, network, and security context.",
     parameters: z.object({
       query: z.string().optional().describe("Search term for tag number or name"),
-      layer: z.number().min(1).max(6).optional().describe("Filter by Canon layer (1-6)"),
+      layer: z.number().min(1).max(6).optional().describe("Filter by PlantTrace layer (1-6)"),
       assetType: z.string().optional().describe("Filter by asset type"),
       riskTier: z
         .enum(["critical", "high", "medium", "low"])
@@ -200,11 +200,11 @@ const canonQueryTools = {
   }),
 };
 
-// System prompt for the Canon AI
-const SYSTEM_PROMPT = `You are the OT Asset Canon AI - an expert system for converged plant intelligence that understands the full context from physical process through enterprise integration.
+// System prompt for the PlantTrace AI
+const SYSTEM_PROMPT = `You are the PlantTrace AI - an expert system for converged plant intelligence that understands the full context from physical process through enterprise integration.
 
 You have access to:
-1. **Canon Query Tools** - Search assets, relationships, attack paths, and consequence chains in the plant's unified asset database
+1. **PlantTrace Query Tools** - Search assets, relationships, attack paths, and consequence chains in the plant's unified asset database
 2. **Physics MCPs** - Calculate thermodynamics, fluid dynamics, and consequence modeling to quantify attack impacts
 
 ${PHYSICS_TOOL_DESCRIPTIONS}
@@ -216,7 +216,7 @@ You bridge the gap between three traditionally siloed perspectives:
 - **IT/Cybersecurity**: Network exposure, CVEs, attack paths, compensating controls
 
 ## Key Capabilities
-1. **Consequence Analysis**: Given an asset or attack scenario, trace through the Canon to identify the full consequence chain - from cyber compromise through physical impact
+1. **Consequence Analysis**: Given an asset or attack scenario, trace through PlantTrace to identify the full consequence chain - from cyber compromise through physical impact
 2. **Attack Path Analysis**: Identify paths from entry points (VPN, vendor access, etc.) to critical assets (safety systems, reactors, etc.)
 3. **Risk Contextualization**: A CVE on a historian ≠ a CVE on a safety controller. You understand the difference and can explain why.
 4. **Physics-Informed Assessment**: Use the physics tools to quantify consequences - adiabatic temperature rise, relief valve demands, toxic release distances
@@ -226,7 +226,7 @@ You bridge the gap between three traditionally siloed perspectives:
 - Quantify consequences using physics tools when relevant
 - Explain the convergence value - what would engineering, OT, or IT miss alone?
 - Recommend specific mitigations when risks are identified
-- Reference Canon layers (1-6) to show where in the architecture risks exist
+- Reference PlantTrace layers (1-6) to show where in the architecture risks exist
 
 ## Example Queries You Can Handle
 - "What happens if an attacker manipulates the setpoint on TIC-101?"

@@ -48,6 +48,17 @@ export type AssetType =
   | "scrubber"
   | "heater"
   | "cooler"
+  // Layer 1 - Grid/Power Physical Infrastructure
+  | "substation"
+  | "line_segment"
+  | "feeder"
+  | "transformer"
+  | "switchgear"
+  | "load_bus"
+  | "generator"
+  | "battery_storage"
+  | "solar_array"
+  | "wind_turbine"
   // Layer 2 - Instrumentation & Actuation
   | "temperature_sensor"
   | "pressure_sensor"
@@ -68,6 +79,16 @@ export type AssetType =
   | "speed_sensor"
   | "vibration_sensor"
   | "controller"  // Field-mounted controller
+  | "pmu"
+  | "power_meter"
+  | "line_sensor"
+  | "fault_indicator"
+  | "voltage_regulator"
+  | "capacitor_bank"
+  | "recloser"
+  | "breaker"
+  | "protection_ct"
+  | "protection_pt"
   // Layer 3 - Control Systems
   | "plc"
   | "dcs_controller"
@@ -79,6 +100,9 @@ export type AssetType =
   | "sis_controller"
   | "remote_io"
   | "marshalling_cabinet"
+  | "protective_relay"
+  | "substation_rtac"
+  | "derms_controller"
   // Layer 4 - Operations & Monitoring
   | "hmi"
   | "operator_station"
@@ -90,6 +114,9 @@ export type AssetType =
   | "server"
   | "application_server"
   | "batch_server"
+  | "ems_server"
+  | "scada_gateway"
+  | "phasor_data_concentrator"
   // Layer 5 - Network Infrastructure
   | "switch"
   | "industrial_switch"
@@ -100,6 +127,8 @@ export type AssetType =
   | "cellular_gateway"
   | "jump_server"
   | "bastion_host"
+  | "serial_gateway"
+  | "protocol_converter"
   // Layer 6 - Enterprise Integration
   | "erp_connector"
   | "erp_gateway"
@@ -132,6 +161,15 @@ export interface EngineeringContext {
     pressure?: { value: number; unit: "PSI" | "bar" | "kPa" };
     flow?: { value: number; unit: "gpm" | "m3/h" };
   };
+  // Electrical design basis
+  ratedVoltageKv?: number;
+  ratedCurrentA?: number;
+  ratedPowerMva?: number;
+  impedancePercent?: number;
+  shortCircuitRatingKa?: number;
+  xOverR?: number;
+  powerFactor?: number;
+  frequencyHz?: number;
   // Physical equipment properties
   designPressure?: string;
   designTemperature?: string;

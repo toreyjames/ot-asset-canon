@@ -92,7 +92,7 @@ export default function IngestPage() {
     {
       value: "manual",
       label: "Manual Entry",
-      description: "JSON file with Canon asset format",
+      description: "JSON file with PlantTrace asset format",
     },
   ];
 
@@ -218,14 +218,14 @@ export default function IngestPage() {
           )}
         </div>
 
-        {/* Canon Data Sources */}
+        {/* PlantTrace Data Sources */}
         <div className="space-y-6">
           <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Canon Data Sources
+              PlantTrace Data Sources
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              The Canon converges data from sources that already exist in most organizations
+              The PlantTrace platform converges data from sources that already exist in most organizations
             </p>
 
             <div className="space-y-3">
@@ -264,7 +264,7 @@ export default function IngestPage() {
               The Rosetta Stone
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              The Canon links sources using shared identifiers:
+              The PlantTrace platform links sources using shared identifiers:
             </p>
             <ul className="mt-2 text-sm space-y-1">
               <li className="flex items-center gap-2">

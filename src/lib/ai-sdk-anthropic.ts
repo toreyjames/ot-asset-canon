@@ -7,7 +7,7 @@ export const anthropic = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Default model for Canon AI queries
+// Default model for PlantTrace AI queries
 export const defaultModel = anthropic("claude-sonnet-4-20250514");
 
 // Model for complex reasoning (physics calculations, attack path analysis)

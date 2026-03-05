@@ -3,16 +3,25 @@
 import { thermodynamicsTools } from "./thermodynamics";
 import { fluidDynamicsTools } from "./fluid-dynamics";
 import { consequenceModelingTools } from "./consequence-modeling";
+import { powerFlowTools } from "./power-flow";
+import { contingencyTools } from "./contingency";
+import { voltageStabilityTools } from "./voltage-stability";
 
 export const physicsTools = {
   ...thermodynamicsTools,
   ...fluidDynamicsTools,
   ...consequenceModelingTools,
+  ...powerFlowTools,
+  ...contingencyTools,
+  ...voltageStabilityTools,
 };
 
 export { thermodynamicsTools } from "./thermodynamics";
 export { fluidDynamicsTools } from "./fluid-dynamics";
 export { consequenceModelingTools } from "./consequence-modeling";
+export { powerFlowTools } from "./power-flow";
+export { contingencyTools } from "./contingency";
+export { voltageStabilityTools } from "./voltage-stability";
 
 // Tool descriptions for AI context
 export const PHYSICS_TOOL_DESCRIPTIONS = `
@@ -35,6 +44,18 @@ export const PHYSICS_TOOL_DESCRIPTIONS = `
 - **idlhDistanceCalculation**: Calculate evacuation zones for toxic releases
 - **vaporCloudExplosion**: Calculate overpressure effects from VCE
 - **poolFireRadiation**: Calculate thermal radiation from pool fires
+
+### Grid Power Flow
+- **feederVoltageProfile**: Estimate feeder-end voltage and voltage drop
+- **transformerLoadingAnalysis**: Calculate transformer load margin and stress
+
+### Grid Contingency
+- **nMinusOneContingencyScreen**: Screen post-outage loading for N-1 conditions
+- **outageResilienceScore**: Score site-level outage resilience posture
+
+### Voltage Stability
+- **reactivePowerMargin**: Calculate reactive reserve margin
+- **voltageCollapseProximity**: Estimate proximity to voltage collapse conditions
 
 Use these tools to:
 1. Assess consequence severity when analyzing OT asset risks

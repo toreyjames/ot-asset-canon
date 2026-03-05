@@ -35,15 +35,25 @@ interface GapPosition {
   severity: "critical" | "major" | "minor";
 }
 
+// Pipe definition with flow type
+interface PipeDef {
+  from: [number, number, number];
+  to: [number, number, number];
+  flowType: "process" | "product" | "feed" | "steam" | "cooling" | "relief" | "nitrogen";
+  label?: string;
+}
+
 // Build process flow from assets
 function buildProcessFlow(assets: Partial<CanonAsset>[]): {
   positions: Map<string, EquipmentPosition>;
-  pipes: Array<{ from: [number, number, number]; to: [number, number, number]; color: string }>;
+  pipes: PipeDef[];
+  headers: Array<{ points: [number, number, number][]; flowType: PipeDef["flowType"] }>;
   units: ProcessUnit[];
   gaps: GapPosition[];
 } {
   const positions = new Map<string, EquipmentPosition>();
-  const pipes: Array<{ from: [number, number, number]; to: [number, number, number]; color: string }> = [];
+  const pipes: PipeDef[] = [];
+  const headers: Array<{ points: [number, number, number][]; flowType: PipeDef["flowType"] }> = [];
   const gaps: GapPosition[] = [];
 
   // Step 1: Identify major equipment (the "anchors" of the process)
@@ -135,11 +145,12 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
         parentUnit: "reaction"
       });
 
-      // Pipe from preheater to reactor
+      // Pipe from preheater to reactor (hot feed)
       pipes.push({
         from: [reactorX - 2, 0, reactorZ],
-        to: [reactorX - 1, 0.5, reactorZ],
-        color: "#f97316"
+        to: [reactorX - 0.8, 0.5, reactorZ],
+        flowType: "feed",
+        label: "Feed to Reactor"
       });
     }
 
@@ -153,11 +164,19 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
         parentUnit: "reaction"
       });
 
-      // Pipe from reactor to cooler
+      // Pipe from reactor to cooler (hot effluent)
       pipes.push({
-        from: [reactorX + 1, 0.5, reactorZ],
+        from: [reactorX + 0.8, 0.5, reactorZ],
         to: [reactorX + 2, 0, reactorZ],
-        color: "#ef4444"
+        flowType: "process",
+        label: "Reactor Effluent"
+      });
+
+      // Cooling water to effluent cooler
+      pipes.push({
+        from: [reactorX + 3, -1, reactorZ - 2],
+        to: [reactorX + 3, -0.3, reactorZ],
+        flowType: "cooling"
       });
     }
 
@@ -209,9 +228,17 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
 
       // Overhead vapor line to condenser
       pipes.push({
-        from: [colX + 0.5, 2.8, colZ],
+        from: [colX + 0.5, 3.2, colZ],
         to: [colX + 1.5, 2.5, colZ],
-        color: "#94a3b8"
+        flowType: "process",
+        label: "Overhead Vapor"
+      });
+
+      // Cooling water to condenser
+      pipes.push({
+        from: [colX + 2, 3.5, colZ - 2],
+        to: [colX + 2, 2.8, colZ],
+        flowType: "cooling"
       });
     }
 
@@ -229,11 +256,28 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
         parentUnit: "separation"
       });
 
-      // Condensate to reflux drum
+      // Condensate down to reflux drum
       pipes.push({
-        from: [colX + 2, 2, colZ],
-        to: [colX + 2, 1.4, colZ],
-        color: "#3b82f6"
+        from: [colX + 2, 2.1, colZ],
+        to: [colX + 2, 1.5, colZ],
+        flowType: "product",
+        label: "Condensate"
+      });
+
+      // Reflux return to column
+      pipes.push({
+        from: [colX + 1.2, 1, colZ],
+        to: [colX + 0.5, 2.5, colZ],
+        flowType: "process",
+        label: "Reflux Return"
+      });
+
+      // Product draw from drum
+      pipes.push({
+        from: [colX + 2.8, 1, colZ],
+        to: [colX + 4, 1, colZ],
+        flowType: "product",
+        label: "Overhead Product"
       });
     }
 
@@ -250,11 +294,26 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
         parentUnit: "separation"
       });
 
-      // Bottoms to reboiler circulation
+      // Bottoms to reboiler
       pipes.push({
         from: [colX - 0.5, 0, colZ],
-        to: [colX - 1.5, -0.5, colZ],
-        color: "#f97316"
+        to: [colX - 1.2, -0.5, colZ],
+        flowType: "process",
+        label: "To Reboiler"
+      });
+
+      // Vapor return from reboiler to column
+      pipes.push({
+        from: [colX - 1.2, -0.2, colZ],
+        to: [colX - 0.5, 0.5, colZ],
+        flowType: "process"
+      });
+
+      // Steam to reboiler
+      pipes.push({
+        from: [colX - 2, -1.5, colZ - 2],
+        to: [colX - 2, -0.8, colZ],
+        flowType: "steam"
       });
     } else {
       // GAP: Column has no reboiler documented
@@ -546,7 +605,114 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
     { id: "control", name: "Control Room", assets: [], position: [0, 0, -12], connections: [] },
   ];
 
-  return { positions, pipes, units, gaps };
+  // === MAIN PROCESS HEADERS ===
+  // These are the main pipe runs connecting major process units
+
+  // Feed header - from feed tanks to reaction section
+  if (feedTanks.length > 0 && reactors.length > 0) {
+    const feedEnd = feedTanks[feedTanks.length - 1];
+    const feedEndPos = positions.get(feedEnd.id || feedEnd.tagNumber || "");
+    const firstReactor = reactors[0];
+    const reactorPos = positions.get(firstReactor.id || firstReactor.tagNumber || "");
+
+    if (feedEndPos && reactorPos) {
+      headers.push({
+        points: [
+          [feedEndPos.position[0] + 1, 0.5, feedEndPos.position[2]],
+          [feedEndPos.position[0] + 2, 0.5, feedEndPos.position[2]],
+          [feedEndPos.position[0] + 2, 0.5, 0],
+          [reactorPos.position[0] - 4, 0.5, 0],
+        ],
+        flowType: "feed"
+      });
+    }
+  }
+
+  // Main process header - from reaction to separation
+  if (reactors.length > 0 && columns.length > 0) {
+    const lastReactor = reactors[reactors.length - 1];
+    const reactorPos = positions.get(lastReactor.id || lastReactor.tagNumber || "");
+    const firstColumn = columns[0];
+    const columnPos = positions.get(firstColumn.id || firstColumn.tagNumber || "");
+
+    if (reactorPos && columnPos) {
+      headers.push({
+        points: [
+          [reactorPos.position[0] + 4, 0.5, reactorPos.position[2]],
+          [reactorPos.position[0] + 5, 0.5, reactorPos.position[2]],
+          [reactorPos.position[0] + 5, 0.5, 0],
+          [columnPos.position[0] - 3, 0.5, 0],
+          [columnPos.position[0] - 1, 0.5, 0],
+        ],
+        flowType: "process"
+      });
+    }
+  }
+
+  // Product header - from separation to storage
+  if (columns.length > 0 && productTanks.length > 0) {
+    const lastColumn = columns[columns.length - 1];
+    const columnPos = positions.get(lastColumn.id || lastColumn.tagNumber || "");
+    const firstTank = productTanks[0];
+    const tankPos = positions.get(firstTank.id || firstTank.tagNumber || "");
+
+    if (columnPos && tankPos) {
+      headers.push({
+        points: [
+          [columnPos.position[0] + 4, 1, columnPos.position[2]],
+          [columnPos.position[0] + 6, 1, columnPos.position[2]],
+          [columnPos.position[0] + 6, 1, 0],
+          [tankPos.position[0] - 2, 1, 0],
+          [tankPos.position[0] - 1, 0.5, tankPos.position[2]],
+        ],
+        flowType: "product"
+      });
+    }
+  }
+
+  // Steam supply header - runs along the back of the plant
+  headers.push({
+    points: [
+      [-12, 0.2, -4],
+      [-12, 0.2, -5],
+      [20, 0.2, -5],
+    ],
+    flowType: "steam"
+  });
+
+  // Cooling water header - runs parallel to steam
+  headers.push({
+    points: [
+      [-12, 0.2, -6],
+      [-12, 0.2, -7],
+      [20, 0.2, -7],
+    ],
+    flowType: "cooling"
+  });
+
+  // Nitrogen header - for inerting
+  headers.push({
+    points: [
+      [-15, 0.3, -3],
+      [25, 0.3, -3],
+    ],
+    flowType: "nitrogen"
+  });
+
+  // Relief header (flare) - elevated, runs above process
+  headers.push({
+    points: [
+      [-10, 4, 2],
+      [0, 4, 2],
+      [15, 4, 2],
+      [30, 4, 2],
+      [35, 4, 2],
+      [35, 8, 2], // Flare stack riser
+    ],
+    flowType: "relief"
+  });
+
+  return { positions, pipes, headers, units, gaps };
 }
 
 // ============================================================================
@@ -577,9 +743,17 @@ const UNIT_COLORS: Record<string, string> = {
   other: "#6b7280",
 };
 
+const CONFIDENCE_COLORS: Record<string, string> = {
+  confirmed: "#22c55e",   // Green - seen by collector or high-confidence source
+  inferred: "#f59e0b",    // Amber - derived from engineering logic
+  expected: "#ef4444",    // Red - should exist but no data found
+};
+
+type ColorMode = "layer" | "risk" | "unit" | "confidence";
+
 function getColor(
   asset: Partial<CanonAsset>,
-  colorMode: "layer" | "risk" | "unit",
+  colorMode: ColorMode,
   parentUnit?: string
 ): string {
   if (colorMode === "unit") {
@@ -590,6 +764,12 @@ function getColor(
   }
   if (colorMode === "risk") {
     return RISK_COLORS[asset.security?.riskTier || "low"] || "#22c55e";
+  }
+  if (colorMode === "confidence") {
+    // Check for confirmationStatus field, or infer from other fields
+    const status = (asset as { confirmationStatus?: string }).confirmationStatus
+      || (asset.verified ? "confirmed" : "inferred");
+    return CONFIDENCE_COLORS[status] || CONFIDENCE_COLORS.inferred;
   }
   return "#6b7280";
 }
@@ -1037,7 +1217,7 @@ function Equipment({
   position: [number, number, number];
   selected: boolean;
   onSelect: (asset: Partial<CanonAsset>) => void;
-  colorMode: "layer" | "risk" | "unit";
+  colorMode: ColorMode;
   parentUnit?: string;
 }) {
   const color = getColor(asset, colorMode, parentUnit);
@@ -1073,18 +1253,230 @@ function Equipment({
   return <Generic3D position={position} color={color} selected={selected} onClick={onClick} />;
 }
 
-// Pipe
-function Pipe3D({ start, end, color = "#888888" }: {
+// Pipe types for color coding
+const PIPE_COLORS = {
+  process: "#64748b",      // Gray - main process
+  product: "#3b82f6",      // Blue - product lines
+  feed: "#22c55e",         // Green - feed lines
+  steam: "#f97316",        // Orange - steam/hot
+  cooling: "#06b6d4",      // Cyan - cooling water
+  relief: "#ef4444",       // Red - relief/flare
+  nitrogen: "#a855f7",     // Purple - nitrogen/inert
+};
+
+// Animated flow particles along a path
+function FlowParticles({
+  points,
+  color,
+  speed = 1,
+  particleCount = 5,
+}: {
+  points: THREE.Vector3[];
+  color: string;
+  speed?: number;
+  particleCount?: number;
+}) {
+  const particlesRef = useRef<THREE.Group>(null);
+
+  // Calculate total path length and segment lengths
+  const { totalLength, segments } = useMemo(() => {
+    let total = 0;
+    const segs: { start: THREE.Vector3; end: THREE.Vector3; length: number; cumulative: number }[] = [];
+
+    for (let i = 0; i < points.length - 1; i++) {
+      const length = points[i].distanceTo(points[i + 1]);
+      segs.push({
+        start: points[i],
+        end: points[i + 1],
+        length,
+        cumulative: total,
+      });
+      total += length;
+    }
+    return { totalLength: total, segments: segs };
+  }, [points]);
+
+  // Get position along path at distance t (0 to totalLength)
+  const getPointAtDistance = (distance: number): THREE.Vector3 => {
+    const d = ((distance % totalLength) + totalLength) % totalLength;
+
+    for (const seg of segments) {
+      if (d <= seg.cumulative + seg.length) {
+        const localT = (d - seg.cumulative) / seg.length;
+        return new THREE.Vector3().lerpVectors(seg.start, seg.end, localT);
+      }
+    }
+    return points[points.length - 1].clone();
+  };
+
+  useFrame((state) => {
+    if (!particlesRef.current) return;
+
+    const time = state.clock.elapsedTime * speed;
+    const spacing = totalLength / particleCount;
+
+    particlesRef.current.children.forEach((particle, i) => {
+      const distance = (time + i * spacing) % totalLength;
+      const pos = getPointAtDistance(distance);
+      particle.position.copy(pos);
+    });
+  });
+
+  return (
+    <group ref={particlesRef}>
+      {Array.from({ length: particleCount }).map((_, i) => (
+        <mesh key={i}>
+          <sphereGeometry args={[0.06, 8, 8]} />
+          <meshStandardMaterial
+            color={color}
+            emissive={color}
+            emissiveIntensity={0.6}
+          />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
+// Routed pipe with proper bends and animated flow
+function Pipe3D({
+  start,
+  end,
+  color = "#64748b",
+  flowType = "process",
+  animate = true,
+}: {
   start: [number, number, number];
   end: [number, number, number];
   color?: string;
+  flowType?: keyof typeof PIPE_COLORS;
+  animate?: boolean;
 }) {
-  const points = useMemo(() => [
-    new THREE.Vector3(...start),
-    new THREE.Vector3(...end),
-  ], [start, end]);
+  const pipeColor = PIPE_COLORS[flowType] || color;
 
-  return <Line points={points} color={color} lineWidth={3} />;
+  // Create routed path with elbows (horizontal-vertical-horizontal routing)
+  const points = useMemo(() => {
+    const [x1, y1, z1] = start;
+    const [x2, y2, z2] = end;
+
+    // Simple routing: go up, across, then down
+    const midY = Math.max(y1, y2) + 0.3;
+
+    // If mostly horizontal, route with one vertical segment
+    if (Math.abs(x2 - x1) > Math.abs(z2 - z1)) {
+      return [
+        new THREE.Vector3(x1, y1, z1),
+        new THREE.Vector3(x1, midY, z1),
+        new THREE.Vector3(x2, midY, z2),
+        new THREE.Vector3(x2, y2, z2),
+      ];
+    } else {
+      // Route with Z movement first
+      return [
+        new THREE.Vector3(x1, y1, z1),
+        new THREE.Vector3(x1, midY, z1),
+        new THREE.Vector3(x1, midY, z2),
+        new THREE.Vector3(x2, midY, z2),
+        new THREE.Vector3(x2, y2, z2),
+      ];
+    }
+  }, [start, end]);
+
+  // Flow speed varies by pipe type
+  const flowSpeed = flowType === "steam" ? 2.5 :
+                    flowType === "relief" ? 3 :
+                    flowType === "cooling" ? 1.5 :
+                    flowType === "nitrogen" ? 0.8 : 1.2;
+
+  return (
+    <group>
+      {/* Pipe outline for depth */}
+      <Line
+        points={points}
+        color="#1e293b"
+        lineWidth={6}
+      />
+      {/* Main pipe line */}
+      <Line
+        points={points}
+        color={pipeColor}
+        lineWidth={4}
+      />
+      {/* Animated flow particles */}
+      {animate && (
+        <FlowParticles
+          points={points}
+          color={pipeColor}
+          speed={flowSpeed}
+          particleCount={3}
+        />
+      )}
+    </group>
+  );
+}
+
+// Thicker process header pipe with animated flow
+function HeaderPipe({
+  points,
+  flowType = "process",
+  animate = true,
+}: {
+  points: [number, number, number][];
+  flowType?: keyof typeof PIPE_COLORS;
+  animate?: boolean;
+}) {
+  const pipeColor = PIPE_COLORS[flowType];
+  const vectors = useMemo(() =>
+    points.map(p => new THREE.Vector3(...p)),
+    [points]
+  );
+
+  // Flow speed varies by pipe type - headers flow faster (bigger pipes)
+  const flowSpeed = flowType === "steam" ? 3 :
+                    flowType === "relief" ? 4 :
+                    flowType === "cooling" ? 2 :
+                    flowType === "nitrogen" ? 1 :
+                    flowType === "feed" ? 2 :
+                    flowType === "product" ? 1.8 : 1.5;
+
+  // More particles for longer headers
+  const particleCount = Math.max(5, Math.floor(vectors.length * 2));
+
+  return (
+    <group>
+      <Line points={vectors} color="#1e293b" lineWidth={10} />
+      <Line points={vectors} color={pipeColor} lineWidth={7} />
+      {/* Animated flow particles */}
+      {animate && (
+        <FlowParticles
+          points={vectors}
+          color={pipeColor}
+          speed={flowSpeed}
+          particleCount={particleCount}
+        />
+      )}
+    </group>
+  );
+}
+
+// Flow direction arrow
+function FlowArrow({
+  position,
+  rotation = 0,
+  color = "#64748b"
+}: {
+  position: [number, number, number];
+  rotation?: number;
+  color?: string;
+}) {
+  return (
+    <group position={position} rotation={[0, rotation, 0]}>
+      <mesh rotation={[0, 0, -Math.PI / 2]}>
+        <coneGeometry args={[0.08, 0.2, 8]} />
+        <meshStandardMaterial color={color} />
+      </mesh>
+    </group>
+  );
 }
 
 // Unit label
@@ -1119,10 +1511,10 @@ function PlantScene({
   onSelectAsset: (asset: Partial<CanonAsset> | null) => void;
   selectedGap: GapPosition | null;
   onSelectGap: (gap: GapPosition | null) => void;
-  colorMode: "layer" | "risk" | "unit";
+  colorMode: ColorMode;
   showGaps: boolean;
 }) {
-  const { positions, pipes, units, gaps } = useMemo(() => buildProcessFlow(assets), [assets]);
+  const { positions, pipes, headers, units, gaps } = useMemo(() => buildProcessFlow(assets), [assets]);
 
   return (
     <>
@@ -1146,6 +1538,11 @@ function PlantScene({
           position={[unit.position[0], 5, unit.position[2]]}
           text={unit.name}
         />
+      ))}
+
+      {/* Main process headers (thick lines showing main pipe runs) */}
+      {headers.map((header, idx) => (
+        <HeaderPipe key={`header-${idx}`} points={header.points} flowType={header.flowType} />
       ))}
 
       {/* Equipment */}
@@ -1175,10 +1572,33 @@ function PlantScene({
         </group>
       ))}
 
-      {/* Pipes */}
+      {/* Process piping (equipment-to-equipment connections) */}
       {pipes.map((pipe, idx) => (
-        <Pipe3D key={idx} start={pipe.from} end={pipe.to} color={pipe.color} />
+        <Pipe3D key={idx} start={pipe.from} end={pipe.to} flowType={pipe.flowType} />
       ))}
+
+      {/* Flare stack at the end of relief header */}
+      <group position={[35, 8, 2]}>
+        {/* Flare stack */}
+        <mesh>
+          <cylinderGeometry args={[0.15, 0.25, 4, 8]} />
+          <meshStandardMaterial color="#444" metalness={0.6} roughness={0.4} />
+        </mesh>
+        {/* Flame */}
+        <mesh position={[0, 2.5, 0]}>
+          <coneGeometry args={[0.4, 1, 8]} />
+          <meshStandardMaterial color="#f97316" emissive="#ef4444" emissiveIntensity={0.8} />
+        </mesh>
+        <pointLight position={[0, 2.5, 0]} color="#f97316" intensity={2} distance={10} />
+      </group>
+
+      {/* Flow direction arrows on main headers */}
+      <FlowArrow position={[-5, 0.6, 0]} rotation={0} color={PIPE_COLORS.feed} />
+      <FlowArrow position={[5, 0.6, 0]} rotation={0} color={PIPE_COLORS.process} />
+      <FlowArrow position={[20, 1.1, 0]} rotation={0} color={PIPE_COLORS.product} />
+      <FlowArrow position={[5, 0.3, -5]} rotation={0} color={PIPE_COLORS.steam} />
+      <FlowArrow position={[5, 0.3, -7]} rotation={0} color={PIPE_COLORS.cooling} />
+      <FlowArrow position={[15, 4.1, 2]} rotation={0} color={PIPE_COLORS.relief} />
 
       {/* Equipment Gaps - ghost equipment showing what's missing */}
       {showGaps && gaps.map((gap) => (
@@ -1220,7 +1640,7 @@ function PlantScene({
 export default function Plant3DView({ assets }: { assets: Partial<CanonAsset>[] }) {
   const [selectedAsset, setSelectedAsset] = useState<Partial<CanonAsset> | null>(null);
   const [selectedGap, setSelectedGap] = useState<GapPosition | null>(null);
-  const [colorMode, setColorMode] = useState<"layer" | "risk" | "unit">("unit");
+  const [colorMode, setColorMode] = useState<ColorMode>("unit");
   const [showGaps, setShowGaps] = useState(true); // Show gaps by default
 
   // Count gaps for display
@@ -1232,12 +1652,13 @@ export default function Plant3DView({ assets }: { assets: Partial<CanonAsset>[] 
       <div className="absolute top-4 left-4 z-10 flex gap-2 items-center">
         <select
           value={colorMode}
-          onChange={(e) => setColorMode(e.target.value as "layer" | "risk" | "unit")}
+          onChange={(e) => setColorMode(e.target.value as ColorMode)}
           className="bg-slate-800 text-white text-sm px-3 py-1.5 rounded border border-slate-700"
         >
           <option value="unit">Color by Process Unit</option>
           <option value="layer">Color by Purdue Layer</option>
           <option value="risk">Color by Risk Tier</option>
+          <option value="confidence">Color by Confidence</option>
         </select>
 
         <button
@@ -1255,7 +1676,7 @@ export default function Plant3DView({ assets }: { assets: Partial<CanonAsset>[] 
       {/* Legend */}
       <div className="absolute top-4 right-4 z-10 bg-slate-800/95 p-3 rounded text-xs border border-slate-700">
         <div className="text-slate-400 mb-2 font-medium">
-          {colorMode === "unit" ? "Process Units" : colorMode === "layer" ? "Purdue Layers" : "Risk Tiers"}
+          {colorMode === "unit" ? "Process Units" : colorMode === "layer" ? "Purdue Layers" : colorMode === "risk" ? "Risk Tiers" : "Data Confidence"}
         </div>
         {colorMode === "unit" && (
           <div className="space-y-1">
@@ -1287,6 +1708,57 @@ export default function Plant3DView({ assets }: { assets: Partial<CanonAsset>[] 
             ))}
           </div>
         )}
+        {colorMode === "confidence" && (
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: CONFIDENCE_COLORS.confirmed }} />
+              <span className="text-white">Confirmed (collector/historian)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: CONFIDENCE_COLORS.inferred }} />
+              <span className="text-white">Inferred (engineering logic)</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded" style={{ backgroundColor: CONFIDENCE_COLORS.expected }} />
+              <span className="text-white">Expected (no data found)</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Pipe Legend */}
+      <div className="absolute top-4 left-[280px] z-10 bg-slate-800/95 p-3 rounded text-xs border border-slate-700">
+        <div className="text-slate-400 mb-2 font-medium">Piping</div>
+        <div className="grid grid-cols-2 gap-x-4 gap-y-1">
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-1 rounded" style={{ backgroundColor: PIPE_COLORS.feed }} />
+            <span className="text-white">Feed</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-1 rounded" style={{ backgroundColor: PIPE_COLORS.process }} />
+            <span className="text-white">Process</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-1 rounded" style={{ backgroundColor: PIPE_COLORS.product }} />
+            <span className="text-white">Product</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-1 rounded" style={{ backgroundColor: PIPE_COLORS.steam }} />
+            <span className="text-white">Steam</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-1 rounded" style={{ backgroundColor: PIPE_COLORS.cooling }} />
+            <span className="text-white">Cooling</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-1 rounded" style={{ backgroundColor: PIPE_COLORS.relief }} />
+            <span className="text-white">Relief/Flare</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-4 h-1 rounded" style={{ backgroundColor: PIPE_COLORS.nitrogen }} />
+            <span className="text-white">Nitrogen</span>
+          </div>
+        </div>
       </div>
 
       {/* Instructions */}

@@ -640,9 +640,16 @@ export function checkInventoryCompleteness(
     }
 
     // Calculate engineering penalty for this layer
+    // Penalties should be proportional, not overwhelming
+    // A few missing pieces shouldn't tank the entire layer score
     const layerCritical = layerEngineeringGaps.filter(o => o.severity === "critical").length;
     const layerMajor = layerEngineeringGaps.filter(o => o.severity === "major").length;
-    const engineeringPenalty = (layerCritical * 20) + (layerMajor * 10);
+    const layerMinor = layerEngineeringGaps.filter(o => o.severity === "minor").length;
+
+    // More reasonable penalties: 8% per critical, 4% per major, 1% per minor
+    // Capped at 40% total penalty so base inventory still matters
+    const rawPenalty = (layerCritical * 8) + (layerMajor * 4) + (layerMinor * 1);
+    const engineeringPenalty = Math.min(rawPenalty, 40);
 
     const baseScore = totalWeight > 0
       ? Math.round((categoryScores / totalWeight) * 100)
@@ -651,12 +658,14 @@ export function checkInventoryCompleteness(
     // Apply engineering penalty to layer score
     const score = Math.max(0, baseScore - engineeringPenalty);
 
-    // Status must account for gaps - can't be "complete" if there are data gaps
-    const hasCriticalGaps = gaps.some(g => g.severity === "critical");
+    // Status reflects documentation completeness
+    // "missing" = we can't run this layer (< 50%)
+    // "partial" = we have most of it but gaps exist (50-89% OR any gaps)
+    // "complete" = fully documented (>= 90% AND no gaps)
     const hasAnyGaps = gaps.length > 0;
 
     let status: "complete" | "partial" | "missing";
-    if (score < 50 || hasCriticalGaps) {
+    if (score < 50) {
       status = "missing";
     } else if (score < 90 || hasAnyGaps) {
       status = "partial";

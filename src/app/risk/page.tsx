@@ -245,7 +245,7 @@ export default function RiskAssessmentPage() {
             </p>
             <ul className="mt-2 text-xs text-gray-500 space-y-1">
               <li>• Process consequence from HAZOP/LOPA</li>
-              <li>• Network exposure from Canon</li>
+              <li>• Network exposure from PlantTrace</li>
               <li>• Threat intelligence for sector</li>
             </ul>
           </div>
@@ -270,7 +270,7 @@ export default function RiskAssessmentPage() {
               What security investment DOES exist today
             </p>
             <ul className="mt-2 text-xs text-gray-500 space-y-1">
-              <li>• Deployed controls from Canon</li>
+              <li>• Deployed controls from PlantTrace</li>
               <li>• Monitoring coverage</li>
               <li>• Compensating controls</li>
             </ul>
