@@ -26,7 +26,7 @@ const PLANT_TYPE_LABELS: Record<PlantType, string> = {
   unknown: "Unknown",
 };
 
-type ViewMode = "3d" | "process" | "graph";
+type ViewMode = "process" | "graph";
 type SiteProfile = "petrochemical" | "chemical" | "water" | "power";
 
 interface AnalysisPayload {
@@ -69,7 +69,9 @@ export default function InventoryPage() {
 
   const [showNetworkOverlay, setShowNetworkOverlay] = useState(false);
   const [selectedAsset, setSelectedAsset] = useState<Partial<CanonAsset> | null>(null);
-  const [activeView, setActiveView] = useState<ViewMode>("3d");
+  const [activeView, setActiveView] = useState<ViewMode>("process");
+  const [mapCollapsed, setMapCollapsed] = useState(false);
+  const [gapsOpen, setGapsOpen] = useState(false);
 
   const completeness = analysis?.completeness;
   const gaps = analysis?.gaps;
@@ -82,6 +84,14 @@ export default function InventoryPage() {
   const criticalGaps = useMemo(() => {
     if (!completeness) return 0;
     return completeness.layerScores.flatMap((l) => l.gaps).filter((g) => g.severity === "critical").length;
+  }, [completeness]);
+
+  const topCriticalGaps = useMemo(() => {
+    if (!completeness) return [];
+    return completeness.layerScores
+      .flatMap((l) => l.gaps.map((g) => ({ ...g, layer: l.layer })))
+      .filter((g) => g.severity === "critical")
+      .slice(0, 8);
   }, [completeness]);
 
   async function startAnalysis() {
@@ -191,7 +201,7 @@ export default function InventoryPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0f]">
       <div className="relative">
-        <div className="w-full h-[70vh] min-h-[560px]">
+        <div className={`${mapCollapsed ? "h-[88px]" : "w-full h-[70vh] min-h-[560px]"} transition-all duration-300 overflow-hidden`}>
           <Suspense
             fallback={
               <div className="w-full h-full bg-slate-900 flex items-center justify-center">
@@ -214,8 +224,17 @@ export default function InventoryPage() {
           </div>
         </div>
 
+        <div className="absolute top-6 right-6 z-20">
+          <button
+            onClick={() => setMapCollapsed((v) => !v)}
+            className="bg-black/80 backdrop-blur-sm text-slate-200 border border-slate-700 px-3 py-1.5 rounded-lg text-xs hover:bg-black/90"
+          >
+            {mapCollapsed ? "Expand Map" : "Collapse Map"}
+          </button>
+        </div>
+
         <div className="absolute bottom-6 left-6 z-20">
-          <div className="bg-black/90 backdrop-blur-sm rounded-xl border border-slate-700 p-5 w-80">
+          <div className="bg-black/90 backdrop-blur-sm rounded-xl border border-slate-700 p-5 w-80 relative">
             <div className="text-slate-400 text-xs uppercase tracking-wider mb-3">Reconstruction Confidence</div>
             <div className="flex items-end gap-3 mb-4">
               <div className={`text-5xl font-bold ${
@@ -231,9 +250,34 @@ export default function InventoryPage() {
                 {completeness?.canRunPlant ? "Runnable" : "Incomplete"}
               </div>
             </div>
-            <div className="text-xs text-slate-400">
-              Visualization sample: {analysis.dataset.visualizationAssets} assets
+            <div className="mt-2 flex items-center justify-between">
+              <div className="text-xs text-slate-400">
+                Visualization sample: {analysis.dataset.visualizationAssets} assets
+              </div>
+              <button
+                onClick={() => setGapsOpen((v) => !v)}
+                className="text-xs px-2 py-1 rounded border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
+              >
+                {criticalGaps} critical gaps
+              </button>
             </div>
+
+            {gapsOpen && (
+              <div className="absolute left-0 right-0 mt-3 bg-slate-950 border border-slate-700 rounded-lg p-3 z-30">
+                <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">Critical Gaps</div>
+                {topCriticalGaps.length === 0 ? (
+                  <div className="text-xs text-slate-500">No critical gaps in this run.</div>
+                ) : (
+                  <ul className="space-y-2 max-h-48 overflow-auto">
+                    {topCriticalGaps.map((gap, i) => (
+                      <li key={`${gap.category}-${i}`} className="text-xs text-slate-200">
+                        <span className="text-red-300 font-medium">L{gap.layer}:</span> {gap.category}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
         </div>
 
@@ -288,12 +332,6 @@ export default function InventoryPage() {
 
         <div className="flex items-center gap-2 mb-4">
           <button
-            onClick={() => setActiveView("3d")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${activeView === "3d" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"}`}
-          >
-            3D Model
-          </button>
-          <button
             onClick={() => setActiveView("process")}
             className={`px-4 py-2 rounded-lg text-sm font-medium ${activeView === "process" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"}`}
           >
@@ -320,11 +358,6 @@ export default function InventoryPage() {
         </div>
 
         <div className="mb-8">
-          {activeView === "3d" && (
-            <Suspense fallback={<div className="w-full h-[480px] bg-slate-900 rounded-lg" />}>
-              <Plant3DView assets={analysis.assets} />
-            </Suspense>
-          )}
           {activeView === "process" && (
             <ProcessMap assets={analysis.assets} onAssetClick={setSelectedAsset} showNetworkOverlay={showNetworkOverlay} />
           )}
