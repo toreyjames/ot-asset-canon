@@ -93,8 +93,8 @@ export default function HomePage() {
               Plant Floor To CMDB.
             </h1>
             <p className="mt-5 text-slate-300 text-lg max-w-xl">
-              PlantTrace is the operational data layer between real plant assets and enterprise systems. We rebuild what exists,
-              prove what is secureable, and deliver clean structure downstream to CMDB and governance teams.
+              PlantTrace is the missing layer between what is on the plant floor and what ends up in your CMDB.
+              We combine discovery tools, engineering files, and system logs into one trusted asset view your teams can act on.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
@@ -118,9 +118,9 @@ export default function HomePage() {
 
         <Ribbon
           items={[
-            "Reindustrialize with evidence-backed plant visibility",
+            "Reindustrialize with a trusted view of every plant asset",
             "The operational layer between OT reality and CMDB systems",
-            "Map what exists, prove what is securable, then scale",
+            "Map what exists, show what can be secured, then scale",
             "One shared truth for operations, engineering, and security",
           ]}
         />
@@ -146,7 +146,7 @@ export default function HomePage() {
           <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
             <Tag text="Modern UX your team actually wants to use" />
             <Tag text="Visual plant context, not abstract spreadsheets" />
-            <Tag text="Built to flow into CMDB and long-term governance" />
+            <Tag text="Designed to feed CMDB and portfolio workflows cleanly" />
           </div>
         </section>
 
