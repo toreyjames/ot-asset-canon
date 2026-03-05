@@ -123,16 +123,47 @@ export default function InventoryPage() {
     }
   }
 
+  function runPreset(preset: "pilot" | "enterprise") {
+    if (preset === "pilot") {
+      setSiteName("Pilot Plant");
+      setSiteSlug("pilot-plant");
+      setProfile("chemical");
+      setTargetAssetCount(3200);
+    } else {
+      setSiteName("Enterprise Refining Complex");
+      setSiteSlug("enterprise-refining-complex");
+      setProfile("petrochemical");
+      setTargetAssetCount(12000);
+    }
+  }
+
   if (!analysis) {
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-slate-100 px-4 py-10">
         <div className="max-w-4xl mx-auto">
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8">
-            <h1 className="text-3xl font-bold text-white">Asset Assurance Analysis</h1>
+            <h1 className="text-3xl font-bold text-white">Start Baseline Run</h1>
             <p className="mt-3 text-slate-400">
-              No site data is preloaded. Run a deterministic site simulation to baseline inventory,
-              evidence confidence, and security coverage.
+              Build an evidence-backed plant baseline and quantify wasted effort reduction.
+              This run outputs inventory confidence, coverage gaps, and CMDB-ready data quality.
             </p>
+
+            <div className="mt-6 grid md:grid-cols-2 gap-3">
+              <button
+                onClick={() => runPreset("pilot")}
+                className="text-left rounded-xl border border-slate-700 bg-slate-800/70 p-4 hover:border-cyan-500/60"
+              >
+                <div className="text-sm font-semibold text-white">Quick Start: Pilot Site</div>
+                <div className="text-xs text-slate-400 mt-1">~3,200 assets · fastest way to see full workflow</div>
+              </button>
+              <button
+                onClick={() => runPreset("enterprise")}
+                className="text-left rounded-xl border border-slate-700 bg-slate-800/70 p-4 hover:border-cyan-500/60"
+              >
+                <div className="text-sm font-semibold text-white">Quick Start: Enterprise Scale</div>
+                <div className="text-xs text-slate-400 mt-1">~12,000 assets · shows large-scope ROI behavior</div>
+              </button>
+            </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
               <label className="text-sm">
@@ -186,10 +217,10 @@ export default function InventoryPage() {
                 disabled={loading}
                 className="px-5 py-2.5 rounded bg-blue-600 hover:bg-blue-700 disabled:opacity-60 text-white font-medium"
               >
-                {loading ? "Running Analysis..." : "Run Analysis"}
+                {loading ? "Running Baseline..." : "Run Baseline"}
               </button>
               <div className="text-xs text-slate-500">
-                Generates full dataset server-side and returns sampled assets for visualization.
+                Server-side generation + analysis. Returns sampled visualization with full KPI outputs.
               </div>
             </div>
           </div>

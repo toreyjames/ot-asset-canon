@@ -1,0 +1,20 @@
+import Link from "next/link";
+
+export default function PlantTraceLogo({ compact = false }: { compact?: boolean }) {
+  return (
+    <Link href="/" className="flex items-center gap-3">
+      <svg width="34" height="34" viewBox="0 0 64 64" fill="none" aria-hidden>
+        <rect width="64" height="64" rx="14" fill="#0B1220" />
+        <rect x="15" y="14" width="8" height="36" rx="2" fill="#22D3EE" />
+        <rect x="28" y="10" width="8" height="44" rx="2" fill="#3B82F6" />
+        <rect x="41" y="18" width="8" height="30" rx="2" fill="#6366F1" />
+      </svg>
+      {!compact && (
+        <div>
+          <div className="font-semibold text-lg tracking-tight text-white">PlantTrace</div>
+          <div className="text-[11px] uppercase tracking-wide text-slate-400">Asset Assurance</div>
+        </div>
+      )}
+    </Link>
+  );
+}

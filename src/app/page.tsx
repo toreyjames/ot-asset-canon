@@ -1,4 +1,6 @@
 import Link from "next/link";
+import PlantTraceLogo from "@/components/marketing/PlantTraceLogo";
+import ConversionPanel from "@/components/marketing/ConversionPanel";
 
 const PROBLEMS = [
   {
@@ -84,10 +86,7 @@ export default function HomePage() {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-20">
         <header className="pt-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-md bg-gradient-to-br from-cyan-300 to-blue-500" />
-            <div className="font-semibold text-lg tracking-tight">PlantTrace</div>
-          </div>
+          <PlantTraceLogo />
           <div className="flex items-center gap-2">
             <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-slate-500">
               Framework
@@ -102,7 +101,7 @@ export default function HomePage() {
         </header>
 
         <section className="mt-14 grid lg:grid-cols-2 gap-10 items-center">
-          <div>
+          <div className="animate-fade-up">
             <p className="inline-flex items-center rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
               OT Asset Assurance for Multi-Plant Operations
             </p>
@@ -128,7 +127,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5">
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 animate-float-slow">
             <div className="text-sm text-slate-300 mb-3">Live Plant Reconstruction Snapshot</div>
             <div className="relative h-[320px] rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 overflow-hidden border border-slate-800">
               <svg className="absolute inset-0 w-full h-full" viewBox="0 0 620 320" fill="none" aria-hidden>
@@ -146,6 +145,10 @@ export default function HomePage() {
               <div className="absolute bottom-3 left-3 text-xs px-2 py-1 rounded bg-green-500/20 border border-green-500/40 text-green-200">Coverage baseline calculated</div>
             </div>
           </div>
+        </section>
+
+        <section className="mt-12">
+          <ConversionPanel />
         </section>
 
         <section className="mt-16">
