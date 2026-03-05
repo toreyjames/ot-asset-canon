@@ -7,20 +7,30 @@ type Goal = "labor_reduction" | "outage_reduction" | "cmdb_quality";
 type Payback = "lt_6" | "6_12" | "gt_12";
 type BudgetBand = "up_to_10" | "10_20" | "20_plus";
 
-type ScopeBand = { label: string; plants: number; assets: number };
+type PlantOption = { label: string; value: number };
+type AssetOption = { label: string; value: number | null };
 
-const SCOPE_BANDS: ScopeBand[] = [
-  { label: "1 Plant · 5k assets", plants: 1, assets: 5000 },
-  { label: "3 Plants · 18k assets", plants: 3, assets: 18000 },
-  { label: "8 Plants · 50k assets", plants: 8, assets: 50000 },
-  { label: "12+ Plants · 100k assets", plants: 12, assets: 100000 },
+const PLANT_OPTIONS: PlantOption[] = [
+  { label: "1 Plant", value: 1 },
+  { label: "3 Plants", value: 3 },
+  { label: "8 Plants", value: 8 },
+  { label: "12+ Plants", value: 12 },
+];
+
+const ASSET_OPTIONS: AssetOption[] = [
+  { label: "5k assets", value: 5000 },
+  { label: "18k assets", value: 18000 },
+  { label: "50k assets", value: 50000 },
+  { label: "100k assets", value: 100000 },
+  { label: "No Idea", value: null },
 ];
 
 export default function ConversionPanel() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [company, setCompany] = useState("");
-  const [scope, setScope] = useState<ScopeBand>(SCOPE_BANDS[1]);
+  const [plants, setPlants] = useState<number>(PLANT_OPTIONS[1].value);
+  const [assets, setAssets] = useState<number | null>(ASSET_OPTIONS[1].value);
   const [plan, setPlan] = useState<Plan>("growth");
   const [goal, setGoal] = useState<Goal>("labor_reduction");
   const [payback, setPayback] = useState<Payback>("lt_6");
@@ -33,10 +43,10 @@ export default function ConversionPanel() {
 
   const estimatedMonthly = useMemo(() => {
     const base = plan === "starter" ? 2500 : plan === "growth" ? 8500 : 18000;
-    const plantFactor = Math.max(0, scope.plants - 1) * (plan === "starter" ? 900 : 1200);
-    const assetFactor = scope.assets > 50000 ? 2500 : scope.assets > 20000 ? 1200 : 0;
+    const plantFactor = Math.max(0, plants - 1) * (plan === "starter" ? 900 : 1200);
+    const assetFactor = assets === null ? 0 : assets > 50000 ? 2500 : assets > 20000 ? 1200 : 0;
     return base + plantFactor + assetFactor;
-  }, [plan, scope]);
+  }, [plan, plants, assets]);
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -51,8 +61,9 @@ export default function ConversionPanel() {
           name,
           email,
           company,
-          plants: scope.plants,
-          assets: scope.assets,
+          plants,
+          assets,
+          assetsUnknown: assets === null,
           plan,
           goal,
           payback,
@@ -83,10 +94,17 @@ export default function ConversionPanel() {
         </div>
 
         <ChoiceRow
-          label="Scope"
-          value={scope.label}
-          options={SCOPE_BANDS.map((s) => ({ label: s.label, value: s.label }))}
-          onChange={(value) => setScope(SCOPE_BANDS.find((s) => s.label === value) || SCOPE_BANDS[1])}
+          label="Plant Count"
+          value={String(plants)}
+          options={PLANT_OPTIONS.map((p) => ({ label: p.label, value: String(p.value) }))}
+          onChange={(value) => setPlants(Number(value))}
+        />
+
+        <ChoiceRow
+          label="Asset Count"
+          value={assets === null ? "unknown" : String(assets)}
+          options={ASSET_OPTIONS.map((a) => ({ label: a.label, value: a.value === null ? "unknown" : String(a.value) }))}
+          onChange={(value) => setAssets(value === "unknown" ? null : Number(value))}
         />
 
         <ChoiceRow
