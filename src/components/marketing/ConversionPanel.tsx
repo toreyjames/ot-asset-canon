@@ -39,8 +39,6 @@ export default function ConversionPanel() {
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const paymentLink = process.env.NEXT_PUBLIC_STRIPE_PAYMENT_LINK;
-
   const estimatedMonthly = useMemo(() => {
     const base = plan === "starter" ? 2500 : plan === "growth" ? 8500 : 18000;
     const plantFactor = Math.max(0, plants - 1) * (plan === "starter" ? 900 : 1200);
@@ -159,7 +157,7 @@ export default function ConversionPanel() {
         {error && <div className="text-sm text-red-300">{error}</div>}
         {submitted && <div className="text-sm text-emerald-300">Intake submitted. We will contact you with a scoped ROI plan.</div>}
 
-        <div className="flex flex-wrap gap-2 pt-1">
+        <div className="flex flex-wrap gap-2 pt-1 items-center">
           <button
             type="submit"
             disabled={loading}
@@ -167,26 +165,9 @@ export default function ConversionPanel() {
           >
             {loading ? "Submitting..." : "Submit Intake"}
           </button>
-
-          {paymentLink ? (
-            <a
-              href={paymentLink}
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-2 rounded-md border border-cyan-400/60 text-cyan-100 hover:bg-cyan-500/10"
-            >
-              Pay Pilot Deposit
-            </a>
-          ) : (
-            <button
-              type="button"
-              disabled
-              className="px-4 py-2 rounded-md border border-slate-700 text-slate-500 cursor-not-allowed"
-              title="Set NEXT_PUBLIC_STRIPE_PAYMENT_LINK to enable checkout"
-            >
-              Payment Link Not Configured
-            </button>
-          )}
+          <div className="text-xs text-slate-400">
+            No payment required here. We scope first, then issue a formal proposal.
+          </div>
         </div>
       </form>
     </div>

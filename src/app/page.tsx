@@ -106,7 +106,9 @@ export default function HomePage() {
               OT Asset Assurance for Multi-Plant Operations
             </p>
             <h1 className="mt-5 text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
-              Stop Paying for Inventory Chaos
+              Reconstruct The Plant.
+              <br />
+              Control The Surface.
             </h1>
             <p className="mt-5 text-slate-300 text-lg max-w-xl">
               PlantTrace reduces wasted labor, rework, and avoidable outage exposure by building a trustworthy OT
@@ -127,24 +129,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 animate-float-slow">
-            <div className="text-sm text-slate-300 mb-3">Live Plant Reconstruction Snapshot</div>
-            <div className="relative h-[320px] rounded-xl bg-gradient-to-br from-slate-950 via-slate-900 to-blue-950 overflow-hidden border border-slate-800">
-              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 620 320" fill="none" aria-hidden>
-                <path d="M20 240 L130 240 L130 170 L250 170 L250 220 L370 220 L370 140 L500 140 L500 205 L600 205" stroke="#67e8f9" strokeWidth="2" strokeDasharray="5 7" />
-                <path d="M30 280 L170 280 L170 240 L320 240 L320 285 L470 285 L470 230 L590 230" stroke="#38bdf8" strokeWidth="2" strokeDasharray="4 6" />
-                {[[130,240],[250,170],[370,220],[500,140],[170,280],[320,240],[470,285]].map(([x,y],i)=>(
-                  <g key={i}>
-                    <circle cx={x} cy={y} r="11" fill="#020617" stroke="#22d3ee" strokeWidth="2"/>
-                    <circle cx={x} cy={y} r="3.5" fill="#22d3ee"/>
-                  </g>
-                ))}
-              </svg>
-              <div className="absolute top-3 left-3 text-xs px-2 py-1 rounded bg-slate-800/90 border border-slate-600">2,400 assets reconstructed</div>
-              <div className="absolute top-3 right-3 text-xs px-2 py-1 rounded bg-slate-800/90 border border-slate-600">486 baseline gaps</div>
-              <div className="absolute bottom-3 left-3 text-xs px-2 py-1 rounded bg-green-500/20 border border-green-500/40 text-green-200">Coverage baseline calculated</div>
-            </div>
-          </div>
+          <HeroPlantMap />
         </section>
 
         <section className="mt-12">
@@ -269,6 +254,58 @@ export default function HomePage() {
             </Link>
           </div>
         </section>
+      </div>
+    </div>
+  );
+}
+
+function HeroPlantMap() {
+  const nodes = [
+    { x: 94, y: 196, label: "Distillation", status: "92%" },
+    { x: 216, y: 138, label: "Utilities", status: "88%" },
+    { x: 338, y: 182, label: "Packaging", status: "95%" },
+    { x: 454, y: 112, label: "Control", status: "97%" },
+    { x: 516, y: 218, label: "Storage", status: "86%" },
+  ];
+
+  return (
+    <div className="rounded-2xl border border-slate-700/80 bg-gradient-to-b from-slate-900/95 to-[#070d1d] p-5 animate-float-slow shadow-[0_0_80px_-24px_rgba(34,211,238,0.35)]">
+      <div className="mb-3 flex items-center justify-between">
+        <div className="text-sm text-slate-200">Operational Digital Twin Snapshot</div>
+        <div className="inline-flex items-center rounded-full border border-cyan-400/40 bg-cyan-500/10 px-2 py-0.5 text-[11px] text-cyan-200">
+          Live continuity model
+        </div>
+      </div>
+
+      <div className="relative h-[340px] overflow-hidden rounded-xl border border-slate-700/70 bg-[#040916]">
+        <div className="absolute inset-0 app-grid-bg opacity-40" />
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(34,211,238,0.18),transparent_34%),radial-gradient(circle_at_80%_10%,rgba(59,130,246,0.20),transparent_35%)]" />
+        <div className="absolute inset-y-0 -left-1/3 w-1/2 rotate-12 bg-gradient-to-r from-transparent via-cyan-300/25 to-transparent animate-scan-slow" />
+
+        <svg className="absolute inset-0 h-full w-full" viewBox="0 0 620 340" fill="none" aria-hidden>
+          <path d="M20 254 L94 196 L216 138 L338 182 L454 112 L516 218 L600 170" stroke="#0ea5e9" strokeWidth="2.5" strokeDasharray="4 6" />
+          <path d="M24 288 L136 246 L262 270 L398 236 L564 276" stroke="#22d3ee" strokeWidth="2" strokeDasharray="7 7" />
+        </svg>
+
+        {nodes.map((node) => (
+          <div key={node.label} className="absolute" style={{ left: `${(node.x / 620) * 100}%`, top: `${(node.y / 340) * 100}%`, transform: "translate(-50%, -50%)" }}>
+            <div className="hero-node-pulse h-4 w-4 rounded-full border border-cyan-300 bg-cyan-300/40 shadow-[0_0_22px_rgba(34,211,238,0.8)]" />
+            <div className="mt-2 min-w-[110px] rounded-md border border-slate-600/70 bg-slate-900/80 px-2 py-1 text-[10px]">
+              <div className="text-slate-200">{node.label}</div>
+              <div className="text-cyan-300">Coverage {node.status}</div>
+            </div>
+          </div>
+        ))}
+
+        <div className="absolute left-3 top-3 rounded-md border border-slate-600 bg-slate-900/90 px-2 py-1 text-xs text-slate-200">
+          8,742 named assets across 3 plants
+        </div>
+        <div className="absolute right-3 top-3 rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1 text-xs text-amber-200">
+          341 baseline coverage gaps
+        </div>
+        <div className="absolute bottom-3 left-3 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-200">
+          81% CMDB ready with evidence
+        </div>
       </div>
     </div>
   );
