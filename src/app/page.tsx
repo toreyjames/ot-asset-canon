@@ -58,6 +58,17 @@ const PLANS = [
   },
 ];
 
+const DEPLOYMENT_OPTIONS = [
+  {
+    name: "Option 1: Customer-Managed Cloud",
+    body: "PlantTrace runs in the customer's cloud tenant for maximum control, security alignment, and internal governance.",
+  },
+  {
+    name: "Option 2: Hybrid Connector",
+    body: "Data collection and mapping run near the plant environment while shared metadata and workflows run in PlantTrace cloud.",
+  },
+];
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#050915] text-slate-100">
@@ -175,6 +186,19 @@ export default function HomePage() {
                 Open value model
               </Link>
             </div>
+          </div>
+        </section>
+
+        <section className="mt-16 section-pop">
+          <h2 className="text-3xl font-semibold">Deployment Models</h2>
+          <p className="mt-2 text-slate-300">Choose the operating model that fits your security and data requirements.</p>
+          <div className="mt-5 grid md:grid-cols-2 gap-4">
+            {DEPLOYMENT_OPTIONS.map((option) => (
+              <div key={option.name} className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+                <h3 className="text-xl font-semibold">{option.name}</h3>
+                <p className="mt-2 text-sm text-slate-300">{option.body}</p>
+              </div>
+            ))}
           </div>
         </section>
 
