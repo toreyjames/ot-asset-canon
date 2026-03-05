@@ -87,8 +87,8 @@ export default function ConversionPanel() {
 
   return (
     <div className="rounded-2xl border border-cyan-700/50 bg-slate-950/80 p-5 md:p-6 shadow-xl shadow-cyan-900/20">
-      <h3 className="text-xl font-semibold text-white">Start Your PlantTrace Intake</h3>
-      <p className="mt-1 text-sm text-slate-300">Quick clicks, no heavy form fatigue.</p>
+      <h3 className="text-2xl font-semibold text-white headline-display">Tell Us Where To Start</h3>
+      <p className="mt-1 text-sm text-slate-300">Two minutes. No decks. No procurement maze.</p>
 
       <form className="mt-5 space-y-4" onSubmit={onSubmit}>
         <div className="grid md:grid-cols-3 gap-3">
@@ -173,7 +173,7 @@ export default function ConversionPanel() {
             {loading ? "Submitting..." : "Submit Intake"}
           </button>
           <div className="text-xs text-slate-400">
-            No payment required here. We scope first, then issue a formal proposal.
+            No payment on this page. We align scope first, then move to formal proposal.
           </div>
         </div>
       </form>

@@ -82,12 +82,12 @@ export default function HomePage() {
           </div>
         </header>
 
-        <section className="mt-14 grid lg:grid-cols-[1.08fr_1fr] gap-10 items-center">
+        <section className="mt-14 grid lg:grid-cols-[1.08fr_1fr] gap-10 items-center section-pop">
           <div className="animate-fade-up">
             <p className="inline-flex items-center rounded-full border border-cyan-400/35 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
               Built for OT teams that want momentum, not friction
             </p>
-            <h1 className="mt-5 text-4xl md:text-6xl font-semibold tracking-tight leading-tight">
+            <h1 className="mt-5 text-4xl md:text-7xl font-semibold tracking-tight leading-[0.92] headline-display">
               Serious Problem.
               <br />
               Sharp Experience.
@@ -116,11 +116,13 @@ export default function HomePage() {
           <HeroPlantMap />
         </section>
 
-        <section className="mt-14">
+        <Ribbon text="PlantTrace turns operational complexity into a workflow your teams actually enjoy running." />
+
+        <section className="mt-14 section-pop">
           <ConversionPanel />
         </section>
 
-        <section className="mt-16">
+        <section className="mt-16 section-pop">
           <h2 className="text-3xl font-semibold">Why Teams Bring In PlantTrace</h2>
           <div className="mt-5 grid md:grid-cols-3 gap-4">
             {CORE_PAIN.map((item) => (
@@ -132,7 +134,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-16 rounded-2xl border border-cyan-700/35 bg-gradient-to-r from-cyan-900/25 to-blue-900/20 p-6">
+        <section className="mt-16 rounded-2xl border border-cyan-700/35 bg-gradient-to-r from-cyan-900/25 to-blue-900/20 p-6 section-pop">
           <h2 className="text-2xl font-semibold">What Makes This Feel Different</h2>
           <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
             <Tag text="Modern UX your team actually wants to use" />
@@ -141,7 +143,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-16">
+        <section className="mt-16 section-pop">
           <h2 className="text-3xl font-semibold">How It Flows</h2>
           <p className="mt-2 text-slate-300">Simple path, serious output.</p>
           <div className="mt-5 grid md:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -155,7 +157,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-16">
+        <section className="mt-16 section-pop">
           <div className="flex items-end justify-between gap-4 flex-wrap">
             <div>
               <h2 className="text-3xl font-semibold">Engagement Paths</h2>
@@ -183,7 +185,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-16 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-blue-900/40 p-8">
+        <section className="mt-16 rounded-2xl border border-slate-800 bg-gradient-to-r from-slate-900 to-blue-900/40 p-8 section-pop">
           <h2 className="text-3xl font-semibold">Build Clarity. Keep Your Edge.</h2>
           <p className="mt-3 text-slate-300 max-w-2xl">
             Start with one plant, prove the workflow, then roll out with a model your teams trust and enjoy using.
@@ -197,6 +199,18 @@ export default function HomePage() {
             </Link>
           </div>
         </section>
+      </div>
+    </div>
+  );
+}
+
+function Ribbon({ text }: { text: string }) {
+  return (
+    <div className="mt-12 overflow-hidden rounded-xl border border-cyan-500/30 bg-cyan-500/10 py-2">
+      <div className="animate-marquee whitespace-nowrap text-sm font-medium text-cyan-100 tracking-wide">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <span key={i} className="mx-8">{text}</span>
+        ))}
       </div>
     </div>
   );

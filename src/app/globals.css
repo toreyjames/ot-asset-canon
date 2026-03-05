@@ -27,7 +27,7 @@ body {
     radial-gradient(circle at 8% 0%, rgba(34, 211, 238, 0.09), transparent 38%),
     radial-gradient(circle at 100% 12%, rgba(59, 130, 246, 0.10), transparent 36%),
     linear-gradient(180deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%);
-  font-family: "Avenir Next", "IBM Plex Sans", "Segoe UI", sans-serif;
+  font-family: "Satoshi", "Avenir Next", "IBM Plex Sans", "Segoe UI", sans-serif;
 }
 
 /* Canon Layer Colors */
@@ -168,6 +168,15 @@ body {
   }
 }
 
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
 .animate-fade-up {
   animation: fadeUp 500ms ease-out both;
 }
@@ -182,4 +191,29 @@ body {
 
 .hero-node-pulse {
   animation: nodePulse 2.2s ease-out infinite;
+}
+
+.animate-marquee {
+  display: inline-block;
+  min-width: 200%;
+  animation: marquee 22s linear infinite;
+}
+
+.headline-display {
+  font-family: "Clash Display", "Satoshi", "Avenir Next", sans-serif;
+  letter-spacing: -0.03em;
+}
+
+.section-pop {
+  position: relative;
+}
+
+.section-pop::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: -14px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.55), transparent);
 }
