@@ -70,6 +70,12 @@ export default function HomePage() {
         <header className="pt-6 flex items-center justify-between">
           <PlantTraceLogo />
           <div className="flex items-center gap-2">
+            <Link href="/login/customer" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Customer Login
+            </Link>
+            <Link href="/login/admin" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Admin Login
+            </Link>
             <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
               Framework
             </Link>
@@ -138,15 +144,6 @@ export default function HomePage() {
                 <p className="mt-2 text-sm text-slate-300">{item.body}</p>
               </div>
             ))}
-          </div>
-        </section>
-
-        <section className="mt-16 rounded-2xl border border-cyan-700/35 bg-gradient-to-r from-cyan-900/25 to-blue-900/20 p-6 section-pop">
-          <h2 className="text-2xl font-semibold">What Makes This Feel Different</h2>
-          <div className="mt-4 grid md:grid-cols-3 gap-3 text-sm">
-            <Tag text="Modern UX your team actually wants to use" />
-            <Tag text="Visual plant context, not abstract spreadsheets" />
-            <Tag text="Designed to feed CMDB and portfolio workflows cleanly" />
           </div>
         </section>
 
@@ -227,12 +224,13 @@ function Ribbon({ items }: { items: string[] }) {
 }
 
 function HeroPlantMap() {
-  const nodes = [
-    { x: 94, y: 196, label: "Distillation", status: "Mapped" },
-    { x: 216, y: 138, label: "Utilities", status: "Verified" },
-    { x: 338, y: 182, label: "Packaging", status: "Aligned" },
-    { x: 454, y: 112, label: "Control", status: "Securable" },
-    { x: 516, y: 218, label: "Storage", status: "Tracked" },
+  const units = [
+    { x: 70, y: 88, w: 120, h: 84, name: "Unit A", type: "Distillation" },
+    { x: 212, y: 68, w: 140, h: 94, name: "Utilities", type: "Power + Steam" },
+    { x: 374, y: 98, w: 156, h: 86, name: "Control", type: "OT Core" },
+    { x: 98, y: 196, w: 148, h: 96, name: "Packaging", type: "Line 1/2" },
+    { x: 276, y: 212, w: 122, h: 82, name: "Blending", type: "Process Cell" },
+    { x: 426, y: 208, w: 126, h: 88, name: "Tank Farm", type: "Storage" },
   ];
 
   return (
@@ -250,28 +248,53 @@ function HeroPlantMap() {
         <div className="absolute inset-y-0 -left-1/3 w-1/2 rotate-12 bg-gradient-to-r from-transparent via-cyan-300/25 to-transparent animate-scan-slow" />
 
         <svg className="absolute inset-0 h-full w-full" viewBox="0 0 620 340" fill="none" aria-hidden>
-          <path d="M20 254 L94 196 L216 138 L338 182 L454 112 L516 218 L600 170" stroke="#0ea5e9" strokeWidth="2.5" strokeDasharray="4 6" />
-          <path d="M24 288 L136 246 L262 270 L398 236 L564 276" stroke="#22d3ee" strokeWidth="2" strokeDasharray="7 7" />
+          <rect x="34" y="44" width="552" height="252" rx="10" stroke="rgba(100,116,139,0.35)" strokeWidth="1.4" />
+          <path d="M40 180 H580" stroke="rgba(148,163,184,0.32)" strokeWidth="2" />
+          <path d="M310 48 V292" stroke="rgba(148,163,184,0.28)" strokeWidth="2" />
+          <path d="M130 172 L130 196 L168 196" stroke="#22d3ee" strokeWidth="2.2" strokeDasharray="5 6" />
+          <path d="M282 160 L282 212 L338 212" stroke="#22d3ee" strokeWidth="2.2" strokeDasharray="5 6" />
+          <path d="M470 182 L470 208" stroke="#22d3ee" strokeWidth="2.2" strokeDasharray="5 6" />
+          <path d="M246 244 H276" stroke="#38bdf8" strokeWidth="2.2" strokeDasharray="5 6" />
+          <path d="M398 252 H426" stroke="#38bdf8" strokeWidth="2.2" strokeDasharray="5 6" />
         </svg>
 
-        {nodes.map((node) => (
-          <div key={node.label} className="absolute" style={{ left: `${(node.x / 620) * 100}%`, top: `${(node.y / 340) * 100}%`, transform: "translate(-50%, -50%)" }}>
-            <div className="hero-node-pulse h-4 w-4 rounded-full border border-cyan-300 bg-cyan-300/40 shadow-[0_0_22px_rgba(34,211,238,0.8)]" />
-            <div className="mt-2 min-w-[110px] rounded-md border border-slate-600/70 bg-slate-900/80 px-2 py-1 text-[10px]">
-              <div className="text-slate-200">{node.label}</div>
-              <div className="text-cyan-300">{node.status}</div>
-            </div>
+        {units.map((unit) => (
+          <div
+            key={unit.name}
+            className="absolute rounded-md border border-cyan-400/30 bg-slate-900/75 shadow-[0_0_16px_rgba(34,211,238,0.14)]"
+            style={{ left: unit.x, top: unit.y, width: unit.w, height: unit.h }}
+          >
+            <div className="absolute top-2 left-2 text-[10px] text-cyan-200">{unit.name}</div>
+            <div className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-cyan-300/80 hero-node-pulse" />
+            <div className="absolute bottom-2 left-2 text-[10px] text-slate-300">{unit.type}</div>
+            <div className="absolute bottom-2 right-2 text-[10px] text-emerald-300">tracked</div>
+          </div>
+        ))}
+
+        {[
+          { left: "23%", top: "50%" },
+          { left: "45%", top: "57%" },
+          { left: "61%", top: "54%" },
+          { left: "72%", top: "64%" },
+        ].map((point, index) => (
+          <div
+            key={index}
+            className="absolute"
+            style={{ left: point.left, top: point.top, transform: "translate(-50%, -50%)" }}
+          >
+            <div className="hero-node-pulse h-3.5 w-3.5 rounded-full border border-cyan-300 bg-cyan-300/40 shadow-[0_0_18px_rgba(34,211,238,0.8)]" />
+            <div className="mt-1 text-[9px] text-cyan-200 uppercase tracking-wide">link</div>
           </div>
         ))}
 
         <div className="absolute left-3 top-3 rounded-md border border-slate-600 bg-slate-900/90 px-2 py-1 text-xs text-slate-200">
-          live map assembling
+          site map + process lanes
         </div>
         <div className="absolute right-3 top-3 rounded-md border border-amber-500/50 bg-amber-500/10 px-2 py-1 text-xs text-amber-200">
-          smart gaps highlighted
+          gaps pinned to exact unit zones
         </div>
         <div className="absolute bottom-3 left-3 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-200">
-          ready for action
+          continuity map synced to asset inventory
         </div>
       </div>
     </div>
@@ -284,8 +307,4 @@ function Pill({ text }: { text: string }) {
       {text}
     </div>
   );
-}
-
-function Tag({ text }: { text: string }) {
-  return <div className="rounded-md border border-slate-700 bg-slate-950/60 px-3 py-2">{text}</div>;
 }
