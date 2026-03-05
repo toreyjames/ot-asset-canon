@@ -73,12 +73,6 @@ export default function HomePage() {
             <Link href="/login" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
               Login
             </Link>
-            <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Framework
-            </Link>
-            <Link href="/roi" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Value
-            </Link>
             <Link href="/inventory" className="px-3 py-2 text-sm rounded-md bg-cyan-400 text-slate-950 font-medium hover:bg-cyan-300">
               Experience Demo
             </Link>
@@ -155,6 +149,32 @@ export default function HomePage() {
                 <p className="mt-2 text-sm text-slate-300">{item.body}</p>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="mt-16 section-pop">
+          <h2 className="text-3xl font-semibold">Framework + Value At A Glance</h2>
+          <div className="mt-5 grid md:grid-cols-2 gap-4">
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div className="text-xs uppercase tracking-wide text-cyan-300">Framework</div>
+              <h3 className="mt-2 text-xl font-semibold">Connect, Rebuild, Align, Scale</h3>
+              <p className="mt-2 text-sm text-slate-300">
+                We start with actual plant data, reconstruct the operating map, align teams on one baseline, then scale cleanly across sites.
+              </p>
+              <Link href="/framework" className="mt-4 inline-block text-sm text-cyan-300 hover:text-cyan-200">
+                Open full framework
+              </Link>
+            </div>
+            <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-6">
+              <div className="text-xs uppercase tracking-wide text-cyan-300">Value</div>
+              <h3 className="mt-2 text-xl font-semibold">Less Waste, Faster Execution</h3>
+              <p className="mt-2 text-sm text-slate-300">
+                Teams reduce manual reconciliation, move quicker on coverage actions, and send cleaner data into CMDB and downstream workflows.
+              </p>
+              <Link href="/roi" className="mt-4 inline-block text-sm text-cyan-300 hover:text-cyan-200">
+                Open value model
+              </Link>
+            </div>
           </div>
         </section>
 
