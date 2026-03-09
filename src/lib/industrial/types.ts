@@ -43,6 +43,33 @@ export interface CandidateAssetRecord {
   properties?: Record<string, unknown>;
 }
 
+export type IngestionMode =
+  | "file_upload"
+  | "watched_folder"
+  | "api_pull"
+  | "scheduled_import";
+
+export interface IngestionJobMetadata {
+  jobId: string;
+  mode: IngestionMode;
+  source: string;
+  startedAt: string;
+  finishedAt?: string;
+  status: "processing" | "completed" | "failed";
+  recordsIn: number;
+  candidatesOut: number;
+  errors: string[];
+}
+
+export interface RawIngestionRecord {
+  id?: string;
+  name?: string;
+  vendor?: string;
+  zone?: string;
+  type?: string;
+  [key: string]: unknown;
+}
+
 export interface CanonicalAsset {
   id: string;
   canonicalName: string;
