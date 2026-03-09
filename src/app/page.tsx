@@ -80,6 +80,26 @@ export default function HomePage() {
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
         <header className="pt-6 flex items-center justify-between">
           <PlantTraceLogo />
+          <div className="hidden lg:flex items-center gap-2">
+            <Link href="/ingest" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Ingest
+            </Link>
+            <Link href="/explorer" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Explorer
+            </Link>
+            <Link href="/ai" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Query
+            </Link>
+            <Link href="/inventory" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Inventory
+            </Link>
+            <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              Framework
+            </Link>
+            <Link href="/roi" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              ROI
+            </Link>
+          </div>
           <div className="flex items-center gap-2">
             <Link href="/login" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
               Login
@@ -89,6 +109,27 @@ export default function HomePage() {
             </Link>
           </div>
         </header>
+
+        <div className="lg:hidden mt-4 flex flex-wrap gap-2">
+          <Link href="/ingest" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
+            Ingest
+          </Link>
+          <Link href="/explorer" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
+            Explorer
+          </Link>
+          <Link href="/ai" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
+            Query
+          </Link>
+          <Link href="/inventory" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
+            Inventory
+          </Link>
+          <Link href="/framework" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
+            Framework
+          </Link>
+          <Link href="/roi" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
+            ROI
+          </Link>
+        </div>
 
         <section className="mt-14 grid lg:grid-cols-[1.08fr_1fr] gap-10 items-center section-pop">
           <div className="animate-fade-up">
