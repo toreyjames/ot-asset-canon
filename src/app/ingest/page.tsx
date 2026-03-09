@@ -136,6 +136,10 @@ export default function IngestPage() {
         <p className="mt-2 text-slate-300">
           Upload once. PlantTrace handles source ingestion, normalization, identity resolution, and publish.
         </p>
+        <div className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
+          OT Safety Notice: PlantTrace is data-only in this workflow. It does not write to control systems,
+          change setpoints, modify PLC logic, or impact live process operations.
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6">
@@ -326,6 +330,9 @@ export default function IngestPage() {
             >
               {isLoading ? "Agent Running..." : "Start Data Gathering Agent"}
             </button>
+            <p className="text-[11px] text-slate-500">
+              Read-only collection only. No process control or logic writes.
+            </p>
           </form>
 
           {error && <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
