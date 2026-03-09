@@ -271,6 +271,22 @@ export interface OperationalContext {
   endOfLife?: Date;
 }
 
+export type ProvenanceType = "real_benchmark" | "synthetic" | "inferred";
+
+export interface ProvenanceEntry {
+  field: string;
+  sourceType: ProvenanceType;
+  sourceRef: string;
+  confidence: number; // 0-1
+  note?: string;
+}
+
+export interface AssetCoordinates {
+  x: number;
+  y: number;
+  z: number;
+}
+
 export interface CanonAsset {
   id: string;
   tagNumber: string; // The Rosetta Stone
@@ -289,6 +305,8 @@ export interface CanonAsset {
   updatedAt: Date;
   sourceSystem?: string;
   verified?: boolean;
+  coordinates?: AssetCoordinates;
+  provenance?: ProvenanceEntry[];
 }
 
 export interface AssetRelationship {
