@@ -276,14 +276,12 @@ export default function IngestPage() {
                 <div className={hasNetworkCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
                   {hasNetworkCoverage ? "Network/security source selected" : "Network context missing"}
                 </div>
-                {!hasEngineeringCoverage && (
-                  <div className="mt-3 border-t border-slate-700 pt-2 text-slate-300">
-                    <div className="text-amber-300 mb-1">Engineering suggestions for first-pass quality:</div>
-                    {suggestedEngineeringInputs.map((item) => (
-                      <div key={item}>• {item}</div>
-                    ))}
-                  </div>
-                )}
+                <div className="mt-3 border-t border-slate-700 pt-2 text-slate-300">
+                  <div className="text-cyan-200 mb-1">Engineering suggestions for first-pass quality:</div>
+                  {suggestedEngineeringInputs.map((item) => (
+                    <div key={item}>• {item}</div>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -315,8 +313,11 @@ export default function IngestPage() {
                 onChange={(e) => setAutonomousRun(e.target.checked)}
                 className="h-4 w-4"
               />
-              Autonomous run (recommended)
+              Autonomous pipeline mode (recommended)
             </label>
+            <p className="-mt-3 text-xs text-slate-400">
+              Runs the full pipeline automatically: parse, normalize, dedupe, confidence scoring, and publish.
+            </p>
 
             <button
               type="submit"
