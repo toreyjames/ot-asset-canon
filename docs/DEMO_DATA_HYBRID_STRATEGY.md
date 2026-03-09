@@ -22,6 +22,7 @@ This keeps demo claims honest and auditable.
 - `single_plant_baseline`
 - `multi_plant_portfolio`
 - `multi_tenant_operator`
+- `cross_domain_showcase` (refinery, automotive, defense manufacturing, shipbuilding)
 
 ## API
 `POST /api/demo/hybrid`

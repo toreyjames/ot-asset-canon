@@ -11,6 +11,7 @@ const RequestSchema = z.object({
       "single_plant_baseline",
       "multi_plant_portfolio",
       "multi_tenant_operator",
+      "cross_domain_showcase",
     ])
     .default("single_plant_baseline"),
   seedPrefix: z.string().optional(),

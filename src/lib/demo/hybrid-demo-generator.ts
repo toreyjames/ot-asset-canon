@@ -4,7 +4,8 @@ import type { CanonAsset, ProvenanceEntry } from "@/types/canon";
 export type DemoPackType =
   | "single_plant_baseline"
   | "multi_plant_portfolio"
-  | "multi_tenant_operator";
+  | "multi_tenant_operator"
+  | "cross_domain_showcase";
 
 type BenchmarkArchetype = "swat_like" | "wadi_like" | "power_grid_like";
 
@@ -93,6 +94,36 @@ const PACK_SPECS: Record<DemoPackType, DemoSiteSpec[]> = {
       targetAssetCount: 1800,
       benchmark: "wadi_like",
       tenantId: "tenant_b",
+    },
+  ],
+  cross_domain_showcase: [
+    {
+      siteName: "Gulf Coast Refinery",
+      siteSlug: "gulf-coast-refinery",
+      profile: "petrochemical",
+      targetAssetCount: 3000,
+      benchmark: "swat_like",
+    },
+    {
+      siteName: "Metro Automotive Plant",
+      siteSlug: "metro-automotive-plant",
+      profile: "automotive",
+      targetAssetCount: 2600,
+      benchmark: "wadi_like",
+    },
+    {
+      siteName: "Orion Defense Manufacturing",
+      siteSlug: "orion-defense-manufacturing",
+      profile: "defense_manufacturing",
+      targetAssetCount: 2200,
+      benchmark: "power_grid_like",
+    },
+    {
+      siteName: "Harbor Shipbuilding Yard",
+      siteSlug: "harbor-shipbuilding-yard",
+      profile: "shipbuilding",
+      targetAssetCount: 2800,
+      benchmark: "power_grid_like",
     },
   ],
 };

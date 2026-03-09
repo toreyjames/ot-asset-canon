@@ -1,6 +1,13 @@
 import type { AssetType, CanonAsset, CanonLayer, RiskTier } from "@/types/canon";
 
-export type SiteProfile = "petrochemical" | "chemical" | "water" | "power";
+export type SiteProfile =
+  | "petrochemical"
+  | "chemical"
+  | "water"
+  | "power"
+  | "automotive"
+  | "defense_manufacturing"
+  | "shipbuilding";
 
 export interface GenerateSiteOptions {
   siteName: string;
@@ -36,6 +43,9 @@ const PROCESS_AREAS_BY_PROFILE: Record<SiteProfile, string[]> = {
   chemical: ["Reaction", "Distillation", "Utilities", "Storage", "Loading"],
   water: ["Intake", "Clarification", "Filtration", "Disinfection", "Distribution"],
   power: ["Generation", "Steam", "Cooling", "Substation", "Fuel Handling"],
+  automotive: ["Body Shop", "Paint Shop", "Final Assembly", "Utilities", "Test Line"],
+  defense_manufacturing: ["Precision Machining", "Assembly Cell", "Heat Treatment", "Test Bay", "Secure Storage"],
+  shipbuilding: ["Hull Fabrication", "Module Assembly", "Outfitting", "Dry Dock", "Marine Utilities"],
 };
 
 const LAYER_TYPES: Record<CanonLayer, AssetType[]> = {
