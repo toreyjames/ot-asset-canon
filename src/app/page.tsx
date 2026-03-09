@@ -119,9 +119,9 @@ export default function HomePage() {
             </div>
 
             <div className="mt-8 grid sm:grid-cols-3 gap-3 text-sm">
-              <Pill text="Fewer blind spots" />
-              <Pill text="Faster decisions" />
-              <Pill text="Cleaner handoffs" />
+              <Pill text="3-D Facility Explorer" />
+              <Pill text="Industrial Graph" />
+              <Pill text="Natural Query Engine" />
             </div>
           </div>
 

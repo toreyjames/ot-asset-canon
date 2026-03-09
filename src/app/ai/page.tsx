@@ -98,11 +98,10 @@ function AIQueryPageInner() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          AI-Powered PlantTrace Query
+          Industrial Query Engine
         </h1>
         <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Ask questions about your plant using natural language. The AI has access to
-          PlantTrace asset data and physics calculation tools.
+          Ask questions about infrastructure using natural language, graph relationships, and asset intelligence.
         </p>
       </div>
 

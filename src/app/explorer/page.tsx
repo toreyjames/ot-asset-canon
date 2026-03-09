@@ -226,10 +226,10 @@ function ExplorerPageInner() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-          PlantTrace Explorer
+          Industrial Graph Explorer
         </h1>
         <p className="text-gray-600 dark:text-gray-400">
-          Browse and search assets across all PlantTrace layers
+          Search and traverse infrastructure relationships across assets, process systems, and network nodes
         </p>
       </div>
 
