@@ -31,8 +31,13 @@ const AGENT_STEPS = [
   "Publish Canonical Inventory",
 ];
 
+const OT_SOURCES: IngestionSource[] = ["claroty", "dragos", "nozomi"];
+const ENGINEERING_SOURCES: IngestionSource[] = ["manual"];
+const NETWORK_SOURCES: IngestionSource[] = ["manual", "nessus", "qualys", "tenable"];
+
 export default function IngestPage() {
   const [source, setSource] = useState<IngestionSource>("claroty");
+  const [sourceBundle, setSourceBundle] = useState<IngestionSource[]>(["claroty"]);
   const [deploymentMode, setDeploymentMode] = useState<DeploymentMode>("customer_cloud");
   const [operatingScope, setOperatingScope] = useState<OperatingScope>("single_plant");
   const [autonomousRun, setAutonomousRun] = useState(true);
@@ -65,6 +70,19 @@ export default function IngestPage() {
     const processed = result.assetsCreated + result.assetsUpdated;
     return Math.round(processed / 55);
   }, [result]);
+
+  const hasOtCoverage = useMemo(
+    () => sourceBundle.some((s) => OT_SOURCES.includes(s)),
+    [sourceBundle]
+  );
+  const hasEngineeringCoverage = useMemo(
+    () => sourceBundle.some((s) => ENGINEERING_SOURCES.includes(s)),
+    [sourceBundle]
+  );
+  const hasNetworkCoverage = useMemo(
+    () => sourceBundle.some((s) => NETWORK_SOURCES.includes(s)),
+    [sourceBundle]
+  );
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -173,6 +191,50 @@ export default function IngestPage() {
                     <div className="text-[11px] text-slate-400">{s.description}</div>
                   </button>
                 ))}
+              </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Multi-source is supported. Run this agent for each source in your bundle; PlantTrace stitches records into one canonical model.
+              </p>
+            </div>
+
+            <div>
+              <div className="text-xs text-slate-400 mb-2">Source Bundle (What You Plan To Connect)</div>
+              <div className="flex flex-wrap gap-2">
+                {sources.map((s) => {
+                  const active = sourceBundle.includes(s.value);
+                  return (
+                    <button
+                      key={`bundle-${s.value}`}
+                      type="button"
+                      onClick={() =>
+                        setSourceBundle((prev) =>
+                          active ? prev.filter((x) => x !== s.value) : [...prev, s.value]
+                        )
+                      }
+                      className={`rounded-md border px-2.5 py-1.5 text-xs ${
+                        active
+                          ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                          : "border-slate-700 bg-slate-950 text-slate-300"
+                      }`}
+                    >
+                      {s.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="mt-3 rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs">
+                <div className="text-slate-300">Model Readiness Checklist</div>
+                <div className={hasOtCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
+                  {hasOtCoverage ? "OT discovery source selected" : "OT discovery source missing"}
+                </div>
+                <div className={hasEngineeringCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
+                  {hasEngineeringCoverage
+                    ? "Engineering source selected"
+                    : "Engineering input missing (tags/P&ID/facility layout expected)"}
+                </div>
+                <div className={hasNetworkCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
+                  {hasNetworkCoverage ? "Network/security source selected" : "Network context missing"}
+                </div>
               </div>
             </div>
 
