@@ -36,7 +36,7 @@ const ENGINEERING_SOURCES: IngestionSource[] = ["manual"];
 const NETWORK_SOURCES: IngestionSource[] = ["manual", "nessus", "qualys", "tenable"];
 
 export default function IngestPage() {
-  const [source, setSource] = useState<IngestionSource>("claroty");
+  const [uploadSource, setUploadSource] = useState<IngestionSource>("claroty");
   const [sourceBundle, setSourceBundle] = useState<IngestionSource[]>(["claroty"]);
   const [deploymentMode, setDeploymentMode] = useState<DeploymentMode>("customer_cloud");
   const [operatingScope, setOperatingScope] = useState<OperatingScope>("single_plant");
@@ -84,6 +84,13 @@ export default function IngestPage() {
     [sourceBundle]
   );
 
+  const suggestedEngineeringInputs = [
+    "Equipment list (tag, name, vendor, area/zone)",
+    "PLC tag export (controller, tag, line/unit)",
+    "Facility zone map or coordinates",
+    "P&ID or line index reference map",
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) return;
@@ -96,7 +103,7 @@ export default function IngestPage() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("source", source);
+      formData.append("source", uploadSource);
 
       const response = await fetch("/api/ingest", {
         method: "POST",
@@ -174,31 +181,29 @@ export default function IngestPage() {
             </div>
 
             <div>
-              <div className="text-xs text-slate-400 mb-2">Source</div>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {sources.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => setSource(s.value)}
-                    className={`rounded-md border px-3 py-2 text-left transition-colors ${
-                      source === s.value
-                        ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
-                        : "border-slate-700 bg-slate-950 text-slate-300 hover:border-slate-500"
-                    }`}
-                  >
-                    <div className="text-sm font-medium">{s.label}</div>
-                    <div className="text-[11px] text-slate-400">{s.description}</div>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-2 text-xs text-slate-400">
-                Multi-source is supported. Run this agent for each source in your bundle; PlantTrace stitches records into one canonical model.
-              </p>
-            </div>
-
-            <div>
               <div className="text-xs text-slate-400 mb-2">Source Bundle (What You Plan To Connect)</div>
+              <div className="mb-2 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceBundle(["claroty", "manual", "qualys"]);
+                    setUploadSource("claroty");
+                  }}
+                  className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
+                >
+                  Suggested Start Bundle
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSourceBundle(["claroty"]);
+                    setUploadSource("claroty");
+                  }}
+                  className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
+                >
+                  OT-Only (Not Recommended)
+                </button>
+              </div>
               <div className="flex flex-wrap gap-2">
                 {sources.map((s) => {
                   const active = sourceBundle.includes(s.value);
@@ -206,11 +211,15 @@ export default function IngestPage() {
                     <button
                       key={`bundle-${s.value}`}
                       type="button"
-                      onClick={() =>
-                        setSourceBundle((prev) =>
-                          active ? prev.filter((x) => x !== s.value) : [...prev, s.value]
-                        )
-                      }
+                      onClick={() => {
+                        setSourceBundle((prev) => {
+                          const next = active ? prev.filter((x) => x !== s.value) : [...prev, s.value];
+                          if (!next.includes(uploadSource) && next.length > 0) {
+                            setUploadSource(next[0]);
+                          }
+                          return next;
+                        });
+                      }}
                       className={`rounded-md border px-2.5 py-1.5 text-xs ${
                         active
                           ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
@@ -222,6 +231,34 @@ export default function IngestPage() {
                   );
                 })}
               </div>
+              <p className="mt-2 text-xs text-slate-400">
+                Multi-source is supported. Add your expected sources first, then upload one file at a time and tag it correctly.
+              </p>
+            </div>
+
+            <div>
+              <div className="text-xs text-slate-400 mb-2">Upload This File As</div>
+              <div className="flex flex-wrap gap-2">
+                {sourceBundle.length === 0 && <div className="text-xs text-amber-300">Select at least one source in Source Bundle.</div>}
+                {sourceBundle.map((value) => {
+                  const label = sources.find((s) => s.value === value)?.label || value;
+                  return (
+                    <button
+                      key={`upload-${value}`}
+                      type="button"
+                      onClick={() => setUploadSource(value)}
+                      className={`rounded-md border px-3 py-1.5 text-xs ${
+                        uploadSource === value
+                          ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                          : "border-slate-700 bg-slate-950 text-slate-300"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+
               <div className="mt-3 rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs">
                 <div className="text-slate-300">Model Readiness Checklist</div>
                 <div className={hasOtCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
@@ -235,6 +272,14 @@ export default function IngestPage() {
                 <div className={hasNetworkCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
                   {hasNetworkCoverage ? "Network/security source selected" : "Network context missing"}
                 </div>
+                {!hasEngineeringCoverage && (
+                  <div className="mt-3 border-t border-slate-700 pt-2 text-slate-300">
+                    <div className="text-amber-300 mb-1">Engineering suggestions for first-pass quality:</div>
+                    {suggestedEngineeringInputs.map((item) => (
+                      <div key={item}>• {item}</div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
 
@@ -267,7 +312,7 @@ export default function IngestPage() {
 
             <button
               type="submit"
-              disabled={!file || isLoading}
+              disabled={!file || isLoading || sourceBundle.length === 0}
               className="w-full rounded-md bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
             >
               {isLoading ? "Agent Running..." : "Start Data Gathering Agent"}
