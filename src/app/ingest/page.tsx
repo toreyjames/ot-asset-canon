@@ -62,7 +62,11 @@ export default function IngestPage() {
     { value: "nessus", label: "Nessus", description: "Scanner output" },
     { value: "qualys", label: "Qualys", description: "Scanner output" },
     { value: "tenable", label: "Tenable", description: "Scanner output" },
-    { value: "manual", label: "Manual", description: "CSV/JSON fallback" },
+    {
+      value: "manual",
+      label: "Engineering / Facility File",
+      description: "Equipment list, PLC tags, zones, coordinates, or P&ID index (CSV/JSON)",
+    },
   ];
 
   const estimatedHoursSaved = useMemo(() => {
@@ -298,6 +302,10 @@ export default function IngestPage() {
                   <span className="text-sm text-slate-300">Click to upload CSV/JSON</span>
                 )}
               </label>
+              <p className="mt-2 text-xs text-slate-400">
+                If this file is engineering context, set <span className="text-slate-200">Upload This File As</span> to
+                <span className="text-slate-200"> Engineering / Facility File</span>.
+              </p>
             </div>
 
             <label className="flex items-center gap-2 text-sm text-slate-300">
