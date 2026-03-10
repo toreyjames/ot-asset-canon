@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import ProcessMap from "@/components/canon/ProcessMap";
-import RelationshipGraph from "@/components/canon/RelationshipGraph";
-import PlantReconstructionPanel from "@/components/canon/PlantReconstruction";
 import { LAYER_NAMES, type CanonAsset, type CanonLayer } from "@/types/canon";
 import type { CompletenessResult, GapAnalysis, PlantType } from "@/lib/inventory-completeness";
 import type { SiteProfile } from "@/lib/synthetic-site-generator";
+import Link from "next/link";
 
 const Plant3DView = lazy(() => import("@/components/canon/Plant3DView"));
 
@@ -27,7 +25,6 @@ const PLANT_TYPE_LABELS: Record<PlantType, string> = {
   unknown: "Unknown",
 };
 
-type ViewMode = "process" | "graph";
 type DemoPresetKey =
   | "refinery"
   | "chemical"
@@ -187,10 +184,7 @@ export default function InventoryPage() {
   const [profile, setProfile] = useState<SiteProfile>("petrochemical");
   const [targetAssetCount, setTargetAssetCount] = useState(2400);
 
-  const [showNetworkOverlay, setShowNetworkOverlay] = useState(false);
-  const [selectedAsset, setSelectedAsset] = useState<Partial<CanonAsset> | null>(null);
-  const [activeView, setActiveView] = useState<ViewMode>("process");
-  const [mapCollapsed, setMapCollapsed] = useState(false);
+  const [mapCollapsed, setMapCollapsed] = useState(true);
   const [gapsOpen, setGapsOpen] = useState(false);
 
   const completeness = analysis?.completeness;
@@ -685,74 +679,6 @@ export default function InventoryPage() {
           />
         </div>
 
-        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-          <h3 className="text-sm font-semibold text-white">Plant Manager View: How Assets Are Performing</h3>
-          <div className="mt-3 grid gap-3 md:grid-cols-3 text-xs text-slate-300">
-            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-              <div className="text-cyan-300 font-medium">1) What do I have?</div>
-              <div className="mt-1">Total discovered assets and source-seen percentage answer inventory visibility.</div>
-            </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-              <div className="text-cyan-300 font-medium">2) How are they performing?</div>
-              <div className="mt-1">Evidence quality + security baseline coverage indicate operational confidence and control readiness.</div>
-            </div>
-            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-              <div className="text-cyan-300 font-medium">3) What needs action now?</div>
-              <div className="mt-1">Critical actions and baseline gaps show where teams should focus next.</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-white">Layer Completeness</h3>
-            <div className="text-sm text-slate-400">{totalGaps} gaps · {criticalGaps} critical</div>
-          </div>
-          <div className="space-y-4">
-            {completeness?.layerScores.map((layer) => (
-              <div key={layer.layer} className="flex items-center gap-4">
-                <div className="w-44 text-sm text-slate-400">L{layer.layer}: {layer.name}</div>
-                <div className="flex-1 h-4 bg-slate-800 rounded-full overflow-hidden">
-                  <div
-                    className={`h-4 rounded-full ${
-                      layer.status === "complete" ? "bg-green-500" : layer.status === "partial" ? "bg-yellow-500" : "bg-red-500"
-                    }`}
-                    style={{ width: `${layer.score}%` }}
-                  />
-                </div>
-                <div className="w-12 text-right text-sm text-white">{layer.score}%</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 mb-4">
-          <button
-            onClick={() => setActiveView("process")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${activeView === "process" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"}`}
-          >
-            Process Map
-          </button>
-          <button
-            onClick={() => setActiveView("graph")}
-            className={`px-4 py-2 rounded-lg text-sm font-medium ${activeView === "graph" ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-400"}`}
-          >
-            Relationships
-          </button>
-
-          {activeView === "process" && (
-            <label className="flex items-center gap-2 text-sm text-slate-400 ml-auto">
-              <input
-                type="checkbox"
-                checked={showNetworkOverlay}
-                onChange={(e) => setShowNetworkOverlay(e.target.checked)}
-                className="rounded bg-slate-700 border-slate-600"
-              />
-              Show Network Overlay
-            </label>
-          )}
-        </div>
-
         <div className="mb-4 flex flex-wrap gap-2">
           <a
             href="#asset-list"
@@ -760,56 +686,17 @@ export default function InventoryPage() {
           >
             Jump to Asset List
           </a>
-          <button
-            type="button"
-            onClick={() => setActiveView("graph")}
+          <Link
+            href="/explorer"
             className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:border-cyan-400/60"
           >
             Open Knowledge Graph
-          </button>
-        </div>
-
-        <div className="mb-8">
-          {activeView === "process" && (
-            <ProcessMap assets={analysis.assets} onAssetClick={setSelectedAsset} showNetworkOverlay={showNetworkOverlay} />
-          )}
-          {activeView === "graph" && (
-            <RelationshipGraph assets={analysis.assets} selectedAssetId={selectedAsset?.id} onAssetSelect={setSelectedAsset} />
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Top Baseline Recommendations</h3>
-            <ul className="space-y-2 text-sm text-slate-300">
-              {(completeness?.recommendations ?? []).slice(0, 8).map((rec, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="text-blue-400 mt-0.5">→</span>
-                  {rec}
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6">
-            <h3 className="text-lg font-semibold text-white mb-4">Coverage Blind Spots</h3>
-            <ul className="space-y-2 text-sm text-slate-300">
-              {(gaps?.networkBlindSpots ?? []).slice(0, 6).map((spot, i) => (
-                <li key={i} className="flex items-start gap-2">
-                  <span className="text-yellow-400 mt-0.5">•</span>
-                  {spot.description}
-                </li>
-              ))}
-              {(gaps?.networkBlindSpots.length ?? 0) === 0 && (
-                <li className="text-slate-500">No blind spots detected in sampled baseline.</li>
-              )}
-            </ul>
-          </div>
+          </Link>
         </div>
 
         <div id="asset-list" className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-6">
           <div className="mb-3 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-white">Asset List (Sample)</h3>
+            <h3 className="text-lg font-semibold text-white">Unified Asset List (Primary Workspace)</h3>
             <div className="text-xs text-slate-400">Showing first 40 of {analysis.assets.length.toLocaleString()} rendered assets</div>
           </div>
           <div className="overflow-auto rounded-lg border border-slate-800">
@@ -838,46 +725,63 @@ export default function InventoryPage() {
           </div>
         </div>
 
-        <div className="mb-8">
-          <PlantReconstructionPanel />
+        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+          <h3 className="text-lg font-semibold text-white">Immediate Missing Items (Plant Cannot Reliably Run Without)</h3>
+          <p className="mt-1 text-xs text-slate-400">
+            These are model-detected critical gaps from engineering + OT evidence rules.
+          </p>
+          <div className="mt-4 overflow-auto rounded-lg border border-slate-800">
+            <table className="min-w-full text-left text-xs">
+              <thead className="bg-slate-950 text-slate-300">
+                <tr>
+                  <th className="px-3 py-2">Layer</th>
+                  <th className="px-3 py-2">Missing Element</th>
+                  <th className="px-3 py-2">Why It Matters</th>
+                  <th className="px-3 py-2">Data Needed</th>
+                </tr>
+              </thead>
+              <tbody>
+                {topCriticalGaps.slice(0, 20).map((gap, i) => (
+                  <tr key={`${gap.category}-${i}`} className="border-t border-slate-800 text-slate-200">
+                    <td className="px-3 py-2">{`L${gap.layer}`}</td>
+                    <td className="px-3 py-2">{gap.category}</td>
+                    <td className="px-3 py-2">{gap.description}</td>
+                    <td className="px-3 py-2">{gap.suggestion || "Collect engineering and OT evidence for this item."}</td>
+                  </tr>
+                ))}
+                {topCriticalGaps.length === 0 && (
+                  <tr className="border-t border-slate-800 text-slate-400">
+                    <td colSpan={4} className="px-3 py-3">No critical missing items in this run.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
-        <div className="p-6 bg-gradient-to-r from-slate-900 to-blue-900/30 rounded-xl border border-slate-800">
-          <h3 className="font-semibold text-white text-lg mb-2">Operating Sequence</h3>
-          <p className="text-slate-400 text-sm">
-            Phase 1: Rebuild physical + OT inventory. Phase 2: verify evidence quality. Phase 3: verify baseline security coverage.
-            Phase 4 (later): layer risk, consequence, and production impact.
+        <div className="rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+          <h3 className="text-lg font-semibold text-white">Evidence-Driven Requests By Unit/Layer</h3>
+          <p className="mt-1 text-xs text-slate-400">
+            Share this list with engineering and operations to fill high-value data gaps quickly.
           </p>
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {completeness?.layerScores.map((layer) => {
+              const criticalLayerGaps = layer.gaps.filter((gap) => gap.severity === "critical");
+              if (criticalLayerGaps.length === 0) return null;
+              return (
+                <div key={layer.layer} className="rounded-lg border border-slate-800 bg-slate-950/60 p-4">
+                  <div className="text-cyan-300 text-sm font-medium">{`L${layer.layer} · ${layer.name}`}</div>
+                  <ul className="mt-2 space-y-1 text-xs text-slate-300">
+                    {criticalLayerGaps.slice(0, 4).map((gap, idx) => (
+                      <li key={`${gap.category}-${idx}`}>• {gap.suggestion}</li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
-
-      {selectedAsset && (
-        <div className="fixed bottom-4 right-4 w-80 bg-slate-900 rounded-xl shadow-2xl border border-slate-700 p-4 z-50">
-          <div className="flex justify-between items-start">
-            <div>
-              <div className="font-mono font-bold text-white">{selectedAsset.tagNumber}</div>
-              <div className="text-sm text-slate-400">{selectedAsset.name}</div>
-            </div>
-            <button onClick={() => setSelectedAsset(null)} className="text-slate-400 hover:text-white text-xl">×</button>
-          </div>
-          <div className="mt-3 text-sm space-y-1">
-            <div className="flex justify-between">
-              <span className="text-slate-500">Layer</span>
-              <span className="text-white">L{selectedAsset.layer}: {LAYER_NAMES[selectedAsset.layer as CanonLayer]}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-slate-500">Type</span>
-              <span className="text-white">{selectedAsset.assetType?.replace(/_/g, " ")}</span>
-            </div>
-            {selectedAsset.network?.ipAddress && (
-              <div className="flex justify-between">
-                <span className="text-slate-500">IP</span>
-                <span className="font-mono text-white">{selectedAsset.network.ipAddress}</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
