@@ -235,13 +235,20 @@ export default function IngestPage() {
   };
 
   const startWithDemoPack = async () => {
-    if (!demoResult?.sites?.length) return;
+    if (!demoResult?.sites?.length) {
+      setError("Generate a demo pack first, then start the data gathering agent.");
+      return;
+    }
     setDemoRunLoading(true);
+    setIsLoading(true);
+    setStepIndex(0);
+    setResult(null);
     setDemoRunMessage(null);
     setError(null);
 
     try {
       const site = demoResult.sites[0];
+      setDemoRunMessage(`Running pipeline from demo pack (${site.siteName})...`);
       const records = site.assets.slice(0, 1200).map((asset, index) => ({
         id: asset.tagNumber || asset.id || `demo-${index + 1}`,
         name: asset.name || `Asset-${index + 1}`,
@@ -281,6 +288,7 @@ export default function IngestPage() {
       setDemoRunMessage(msg);
       setError(msg);
     } finally {
+      setIsLoading(false);
       setDemoRunLoading(false);
     }
   };
