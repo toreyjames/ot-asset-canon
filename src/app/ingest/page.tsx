@@ -135,6 +135,21 @@ export default function IngestPage() {
     return Math.round(processed / 55);
   }, [result]);
 
+  const inventoryContinueHref = useMemo(() => {
+    const params = new URLSearchParams();
+    params.set("from", "ingest");
+    if (result) {
+      params.set("assets", String(Math.max(200, result.assetsCreated || 200)));
+    }
+    if (demoResult?.sites?.length) {
+      const site = demoResult.sites[0];
+      params.set("siteName", site.siteName);
+      params.set("siteSlug", site.siteSlug);
+      params.set("profile", site.profile);
+    }
+    return `/inventory?${params.toString()}`;
+  }, [result, demoResult]);
+
   const hasOtCoverage = useMemo(
     () => sourceBundle.some((s) => OT_SOURCES.includes(s)),
     [sourceBundle]
@@ -532,7 +547,7 @@ export default function IngestPage() {
                 {result.errors.length > 0 && <div className="mt-1 text-amber-200">Errors: {result.errors.length}</div>}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link
-                    href="/inventory"
+                    href={inventoryContinueHref}
                     className="rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-100 hover:bg-emerald-500/20"
                   >
                     Continue to Inventory

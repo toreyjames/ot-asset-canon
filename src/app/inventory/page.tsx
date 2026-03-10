@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, lazy, Suspense } from "react";
+import { useEffect, useMemo, useState, lazy, Suspense } from "react";
 import ProcessMap from "@/components/canon/ProcessMap";
 import RelationshipGraph from "@/components/canon/RelationshipGraph";
 import PlantReconstructionPanel from "@/components/canon/PlantReconstruction";
@@ -57,10 +57,23 @@ interface AnalysisPayload {
   assets: Partial<CanonAsset>[];
 }
 
+function normalizeProfile(input: string | null): SiteProfile {
+  if (!input) return "petrochemical";
+  if (input === "petrochemical" || input === "chemical" || input === "water" || input === "power") {
+    return input;
+  }
+  if (input.includes("water")) return "water";
+  if (input.includes("power")) return "power";
+  if (input.includes("refinery")) return "petrochemical";
+  return "chemical";
+}
+
 export default function InventoryPage() {
   const [analysis, setAnalysis] = useState<AnalysisPayload | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [autostarted, setAutostarted] = useState(false);
+  const [fromIngest, setFromIngest] = useState(false);
 
   const [siteName, setSiteName] = useState("Houston Plant");
   const [siteSlug, setSiteSlug] = useState("houston-plant");
@@ -94,6 +107,25 @@ export default function InventoryPage() {
       .slice(0, 8);
   }, [completeness]);
 
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get("from");
+    if (from !== "ingest") return;
+    const nextName = params.get("siteName");
+    const nextSlug = params.get("siteSlug");
+    const nextAssets = Number(params.get("assets") || "");
+    const nextProfile = normalizeProfile(params.get("profile"));
+    setFromIngest(true);
+
+    if (nextName) setSiteName(nextName);
+    if (nextSlug) setSiteSlug(nextSlug);
+    if (Number.isFinite(nextAssets) && nextAssets >= 200) {
+      setTargetAssetCount(Math.min(8000, Math.max(200, nextAssets)));
+    }
+    setProfile(nextProfile);
+  }, []);
+
   async function startAnalysis() {
     try {
       setLoading(true);
@@ -123,6 +155,12 @@ export default function InventoryPage() {
     }
   }
 
+  useEffect(() => {
+    if (!fromIngest || autostarted || analysis || loading) return;
+    setAutostarted(true);
+    startAnalysis();
+  }, [fromIngest, autostarted, analysis, loading]);
+
   function runPreset(preset: "pilot" | "enterprise") {
     if (preset === "pilot") {
       setSiteName("Pilot Plant");
@@ -143,6 +181,11 @@ export default function InventoryPage() {
         <div className="max-w-4xl mx-auto">
           <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8">
             <h1 className="text-3xl font-bold text-white">Start Baseline Run</h1>
+            {fromIngest && (
+              <div className="mt-3 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
+                Ingest handoff detected. Site context has been prefilled and baseline is auto-running.
+              </div>
+            )}
             <p className="mt-3 text-slate-400">
               Build an evidence-backed plant baseline and quantify wasted effort reduction.
               This run outputs inventory confidence, coverage gaps, and CMDB-ready data quality.
