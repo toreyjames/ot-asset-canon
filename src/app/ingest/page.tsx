@@ -34,6 +34,14 @@ interface HybridDemoResponse {
     siteSlug: string;
     profile: string;
     tenantId?: string;
+    assets: {
+      id?: string;
+      tagNumber?: string;
+      name?: string;
+      assetType?: string;
+      engineering?: { processArea?: string };
+      controlSystem?: { controllerMake?: string };
+    }[];
     stats: {
       totalAssets: number;
       realBenchmarkFields: number;
@@ -94,6 +102,8 @@ export default function IngestPage() {
   const [demoError, setDemoError] = useState<string | null>(null);
   const [demoResult, setDemoResult] = useState<HybridDemoResponse | null>(null);
   const [demoNextStep, setDemoNextStep] = useState<string | null>(null);
+  const [demoRunLoading, setDemoRunLoading] = useState(false);
+  const [demoRunMessage, setDemoRunMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -179,6 +189,7 @@ export default function IngestPage() {
     setDemoError(null);
     setDemoResult(null);
     setDemoNextStep(null);
+    setDemoRunMessage(null);
 
     try {
       const response = await fetch("/api/demo/hybrid", {
@@ -205,6 +216,56 @@ export default function IngestPage() {
       setDemoError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setDemoLoading(false);
+    }
+  };
+
+  const startWithDemoPack = async () => {
+    if (!demoResult?.sites?.length) return;
+    setDemoRunLoading(true);
+    setDemoRunMessage(null);
+    setError(null);
+
+    try {
+      const site = demoResult.sites[0];
+      const records = site.assets.slice(0, 1200).map((asset, index) => ({
+        id: asset.tagNumber || asset.id || `demo-${index + 1}`,
+        name: asset.name || `Asset-${index + 1}`,
+        vendor: asset.controlSystem?.controllerMake || "Mixed",
+        zone: asset.engineering?.processArea || "Unknown",
+        type: asset.assetType || "asset",
+      }));
+
+      const response = await fetch("/api/collector/run", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "file_upload",
+          source: "demo_pack",
+          facilityName: site.siteName,
+          scopeId: site.siteSlug,
+          records,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to start from demo pack");
+
+      setResult({
+        jobId: data.metadata?.jobId || "demo-pack",
+        status: data.metadata?.status || "completed",
+        assetsCreated: data.summary?.canonicalAssets || 0,
+        assetsUpdated: 0,
+        errors: data.metadata?.errors || [],
+      });
+      setDemoRunMessage(
+        `Started from demo pack (${site.siteName}). Canonical assets: ${data.summary?.canonicalAssets ?? 0}.`
+      );
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unknown error";
+      setDemoRunMessage(msg);
+      setError(msg);
+    } finally {
+      setDemoRunLoading(false);
     }
   };
 
@@ -412,6 +473,11 @@ export default function IngestPage() {
             >
               {isLoading ? "Agent Running..." : "Start Data Gathering Agent"}
             </button>
+            {!file && (
+              <p className="text-[11px] text-amber-300">
+                Upload a file to run this button, or use the Demo Pack Runner path on the right.
+              </p>
+            )}
             <p className="text-[11px] text-slate-500">
               Read-only collection only. No process control or logic writes.
             </p>
@@ -516,6 +582,17 @@ export default function IngestPage() {
                   <div className="rounded-md border border-cyan-500/40 bg-cyan-500/10 p-2 text-xs text-cyan-100">
                     {demoNextStep}
                   </div>
+                )}
+                <button
+                  type="button"
+                  onClick={startWithDemoPack}
+                  disabled={demoRunLoading}
+                  className="w-full rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100 hover:bg-emerald-500/20 disabled:opacity-60"
+                >
+                  {demoRunLoading ? "Starting..." : "Start Data Gathering Agent With Demo Pack"}
+                </button>
+                {demoRunMessage && (
+                  <div className="text-xs text-slate-300">{demoRunMessage}</div>
                 )}
               </div>
             )}
