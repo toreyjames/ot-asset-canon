@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, lazy, Suspense } from "react";
-import { LAYER_NAMES, type CanonAsset, type CanonLayer } from "@/types/canon";
+import { type CanonAsset } from "@/types/canon";
 import type { CompletenessResult, GapAnalysis, PlantType } from "@/lib/inventory-completeness";
 import type { SiteProfile } from "@/lib/synthetic-site-generator";
 import Link from "next/link";
@@ -184,8 +184,10 @@ export default function InventoryPage() {
   const [profile, setProfile] = useState<SiteProfile>("petrochemical");
   const [targetAssetCount, setTargetAssetCount] = useState(2400);
 
-  const [mapCollapsed, setMapCollapsed] = useState(true);
+  const [mapCollapsed, setMapCollapsed] = useState(false);
   const [gapsOpen, setGapsOpen] = useState(false);
+  const [assetSearch, setAssetSearch] = useState("");
+  const [networkFilter, setNetworkFilter] = useState<"all" | "networked" | "non_networked">("all");
 
   const completeness = analysis?.completeness;
   const gaps = analysis?.gaps;
@@ -221,6 +223,37 @@ export default function InventoryPage() {
         Math.round((analysis.coverageBaseline.evidencedPercent / 100) * totalAssets)
       )
     : 0;
+
+  const filteredAssets = useMemo(() => {
+    if (!analysis) return [];
+    const query = assetSearch.trim().toLowerCase();
+
+    return analysis.assets.filter((asset) => {
+      const isNetworked = Boolean(
+        asset.network?.ipAddress ||
+        asset.network?.zone ||
+        asset.network?.vlan ||
+        (asset.layer ?? 0) >= 3
+      );
+
+      if (networkFilter === "networked" && !isNetworked) return false;
+      if (networkFilter === "non_networked" && isNetworked) return false;
+
+      if (!query) return true;
+
+      const haystack = [
+        asset.tagNumber,
+        asset.name,
+        asset.assetType,
+        asset.engineering?.processArea,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [analysis, assetSearch, networkFilter]);
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -566,7 +599,7 @@ export default function InventoryPage() {
               </div>
             }
           >
-            <Plant3DView assets={analysis.assets} />
+            <Plant3DView assets={filteredAssets} />
           </Suspense>
         </div>
 
@@ -575,7 +608,7 @@ export default function InventoryPage() {
             <div className="text-center">
               <div className="text-slate-400 text-xs uppercase tracking-wider">Asset Assurance Baseline</div>
               <div className="text-white text-xl font-semibold mt-1">
-                {analysis.site.siteName} · {analysis.dataset.totalAssets.toLocaleString()} assets generated
+                {analysis.site.siteName} · {filteredAssets.length.toLocaleString()} shown / {analysis.dataset.totalAssets.toLocaleString()} total assets
               </div>
             </div>
           </div>
@@ -694,10 +727,52 @@ export default function InventoryPage() {
           </Link>
         </div>
 
+        <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+          <div className="grid gap-3 md:grid-cols-[1.2fr_auto_auto]">
+            <label className="text-xs text-slate-400">
+              Search Assets
+              <input
+                value={assetSearch}
+                onChange={(e) => setAssetSearch(e.target.value)}
+                placeholder="Tag, name, type, or area"
+                className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100"
+              />
+            </label>
+            <div className="text-xs text-slate-400">
+              Network Filter
+              <div className="mt-1 flex gap-2">
+                {[
+                  ["all", "All"],
+                  ["networked", "Networked"],
+                  ["non_networked", "Non-Networked"],
+                ].map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setNetworkFilter(value as "all" | "networked" | "non_networked")}
+                    className={`rounded-md border px-3 py-2 text-xs ${
+                      networkFilter === value
+                        ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                        : "border-slate-700 bg-slate-950 text-slate-300"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="text-xs text-slate-400 flex items-end">
+              <div className="rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-slate-200">
+                {filteredAssets.length.toLocaleString()} assets in current view
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="asset-list" className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-6">
           <div className="mb-3 flex items-center justify-between">
             <h3 className="text-lg font-semibold text-white">Unified Asset List (Primary Workspace)</h3>
-            <div className="text-xs text-slate-400">Showing first 40 of {analysis.assets.length.toLocaleString()} rendered assets</div>
+            <div className="text-xs text-slate-400">Showing first 80 of {filteredAssets.length.toLocaleString()} filtered assets</div>
           </div>
           <div className="overflow-auto rounded-lg border border-slate-800">
             <table className="min-w-full text-left text-xs">
@@ -711,7 +786,7 @@ export default function InventoryPage() {
                 </tr>
               </thead>
               <tbody>
-                {analysis.assets.slice(0, 40).map((asset) => (
+                {filteredAssets.slice(0, 80).map((asset) => (
                   <tr key={asset.id} className="border-t border-slate-800 text-slate-200">
                     <td className="px-3 py-2 font-mono">{asset.tagNumber || asset.id}</td>
                     <td className="px-3 py-2">{asset.name || "Unknown"}</td>
@@ -720,6 +795,11 @@ export default function InventoryPage() {
                     <td className="px-3 py-2">{asset.engineering?.processArea || "-"}</td>
                   </tr>
                 ))}
+                {filteredAssets.length === 0 && (
+                  <tr className="border-t border-slate-800 text-slate-400">
+                    <td colSpan={5} className="px-3 py-3">No assets match current filters.</td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
