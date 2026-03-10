@@ -43,6 +43,28 @@ interface HybridDemoResponse {
   }[];
 }
 
+const PACK_DEFAULTS: Record<
+  DemoPackOption,
+  { scope: OperatingScope; sources: IngestionSource[] }
+> = {
+  single_plant_baseline: {
+    scope: "single_plant",
+    sources: ["claroty", "manual", "qualys"],
+  },
+  multi_plant_portfolio: {
+    scope: "company_portfolio",
+    sources: ["claroty", "nozomi", "manual", "qualys"],
+  },
+  multi_tenant_operator: {
+    scope: "multi_tenant",
+    sources: ["claroty", "manual", "tenable"],
+  },
+  cross_domain_showcase: {
+    scope: "company_portfolio",
+    sources: ["claroty", "dragos", "manual", "qualys"],
+  },
+};
+
 const AGENT_STEPS = [
   "Connect Sources",
   "Ingest Raw Data",
@@ -71,6 +93,7 @@ export default function IngestPage() {
   const [demoLoading, setDemoLoading] = useState(false);
   const [demoError, setDemoError] = useState<string | null>(null);
   const [demoResult, setDemoResult] = useState<HybridDemoResponse | null>(null);
+  const [demoNextStep, setDemoNextStep] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -155,6 +178,7 @@ export default function IngestPage() {
     setDemoLoading(true);
     setDemoError(null);
     setDemoResult(null);
+    setDemoNextStep(null);
 
     try {
       const response = await fetch("/api/demo/hybrid", {
@@ -169,6 +193,14 @@ export default function IngestPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to generate demo pack");
       setDemoResult(data);
+
+      const defaults = PACK_DEFAULTS[demoPack];
+      setOperatingScope(defaults.scope);
+      setSourceBundle(defaults.sources);
+      setUploadSource(defaults.sources[0]);
+      setDemoNextStep(
+        "Demo loaded. Next: upload your OT discovery export first, then upload Engineering / Facility File to improve model quality."
+      );
     } catch (err) {
       setDemoError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -480,6 +512,11 @@ export default function IngestPage() {
                     </div>
                   </div>
                 ))}
+                {demoNextStep && (
+                  <div className="rounded-md border border-cyan-500/40 bg-cyan-500/10 p-2 text-xs text-cyan-100">
+                    {demoNextStep}
+                  </div>
+                )}
               </div>
             )}
           </div>
