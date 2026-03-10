@@ -13,6 +13,11 @@ type IngestionSource =
 
 type DeploymentMode = "customer_cloud" | "hybrid_connector";
 type OperatingScope = "single_plant" | "company_portfolio" | "multi_tenant";
+type DemoPackOption =
+  | "single_plant_baseline"
+  | "multi_plant_portfolio"
+  | "multi_tenant_operator"
+  | "cross_domain_showcase";
 
 interface IngestionResult {
   jobId: string;
@@ -20,6 +25,22 @@ interface IngestionResult {
   assetsCreated: number;
   assetsUpdated: number;
   errors: string[];
+}
+
+interface HybridDemoResponse {
+  pack: DemoPackOption;
+  sites: {
+    siteName: string;
+    siteSlug: string;
+    profile: string;
+    tenantId?: string;
+    stats: {
+      totalAssets: number;
+      realBenchmarkFields: number;
+      syntheticFields: number;
+      inferredFields: number;
+    };
+  }[];
 }
 
 const AGENT_STEPS = [
@@ -46,6 +67,10 @@ export default function IngestPage() {
   const [stepIndex, setStepIndex] = useState(0);
   const [result, setResult] = useState<IngestionResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [demoPack, setDemoPack] = useState<DemoPackOption>("cross_domain_showcase");
+  const [demoLoading, setDemoLoading] = useState(false);
+  const [demoError, setDemoError] = useState<string | null>(null);
+  const [demoResult, setDemoResult] = useState<HybridDemoResponse | null>(null);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -123,6 +148,31 @@ export default function IngestPage() {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const runDemoPack = async () => {
+    setDemoLoading(true);
+    setDemoError(null);
+    setDemoResult(null);
+
+    try {
+      const response = await fetch("/api/demo/hybrid", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pack: demoPack,
+          maxAssetsPerSite: 1200,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || "Failed to generate demo pack");
+      setDemoResult(data);
+    } catch (err) {
+      setDemoError(err instanceof Error ? err.message : "Unknown error");
+    } finally {
+      setDemoLoading(false);
     }
   };
 
@@ -373,6 +423,65 @@ export default function IngestPage() {
               This agent is your product moat: repeatable ingestion, deterministic asset identity, and CMDB-ready outputs
               with less service effort per deployment.
             </p>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+            <div className="text-xs uppercase tracking-wide text-cyan-300">Demo Pack Runner</div>
+            <p className="mt-2 text-sm text-slate-300">
+              Run a realistic demo pack directly in the app (no terminal required).
+            </p>
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {(
+                [
+                  ["cross_domain_showcase", "Cross-Domain"],
+                  ["single_plant_baseline", "Single Plant"],
+                  ["multi_plant_portfolio", "Portfolio"],
+                  ["multi_tenant_operator", "Multi-Tenant"],
+                ] as [DemoPackOption, string][]
+              ).map(([value, label]) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setDemoPack(value)}
+                  className={`rounded-md border px-2.5 py-1.5 text-xs ${
+                    demoPack === value
+                      ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                      : "border-slate-700 bg-slate-900 text-slate-300"
+                  }`}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={runDemoPack}
+              disabled={demoLoading}
+              className="mt-3 w-full rounded-md border border-cyan-400/50 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100 hover:bg-cyan-500/20 disabled:opacity-60"
+            >
+              {demoLoading ? "Generating Demo Pack..." : "Generate Demo Pack"}
+            </button>
+
+            {demoError && (
+              <div className="mt-3 text-xs text-red-300">{demoError}</div>
+            )}
+
+            {demoResult && (
+              <div className="mt-3 space-y-2">
+                <div className="text-xs text-emerald-300">Generated: {demoResult.pack}</div>
+                {demoResult.sites.map((site) => (
+                  <div key={site.siteSlug} className="rounded-md border border-slate-700 bg-slate-900 p-2 text-xs">
+                    <div className="text-slate-100">{site.siteName}</div>
+                    <div className="text-slate-400">
+                      {site.profile} · {site.stats.totalAssets.toLocaleString()} assets
+                      {site.tenantId ? ` · ${site.tenantId}` : ""}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
