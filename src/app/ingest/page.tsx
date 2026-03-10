@@ -135,20 +135,7 @@ export default function IngestPage() {
     return Math.round(processed / 55);
   }, [result]);
 
-  const inventoryContinueHref = useMemo(() => {
-    const params = new URLSearchParams();
-    params.set("from", "ingest");
-    if (result) {
-      params.set("assets", String(Math.max(200, result.assetsCreated || 200)));
-    }
-    if (demoResult?.sites?.length) {
-      const site = demoResult.sites[0];
-      params.set("siteName", site.siteName);
-      params.set("siteSlug", site.siteSlug);
-      params.set("profile", site.profile);
-    }
-    return `/inventory?${params.toString()}`;
-  }, [result, demoResult]);
+  const inventoryContinueHref = "/inventory?from=ingest";
 
   const hasOtCoverage = useMemo(
     () => sourceBundle.some((s) => OT_SOURCES.includes(s)),
@@ -271,6 +258,19 @@ export default function IngestPage() {
         zone: asset.engineering?.processArea || "Unknown",
         type: asset.assetType || "asset",
       }));
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(
+          "planttrace:lastIngestRun",
+          JSON.stringify({
+            source: "demo_pack",
+            siteName: site.siteName,
+            siteSlug: site.siteSlug,
+            profile: site.profile,
+            records,
+            capturedAt: new Date().toISOString(),
+          })
+        );
+      }
 
       const response = await fetch("/api/collector/run", {
         method: "POST",

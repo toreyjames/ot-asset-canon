@@ -57,6 +57,15 @@ interface AnalysisPayload {
   assets: Partial<CanonAsset>[];
 }
 
+interface IngestRunContext {
+  source: string;
+  siteName: string;
+  siteSlug: string;
+  profile?: string;
+  records: Record<string, unknown>[];
+  capturedAt: string;
+}
+
 function normalizeProfile(input: string | null): SiteProfile {
   if (!input) return "petrochemical";
   if (input === "petrochemical" || input === "chemical" || input === "water" || input === "power") {
@@ -74,6 +83,7 @@ export default function InventoryPage() {
   const [error, setError] = useState<string | null>(null);
   const [autostarted, setAutostarted] = useState(false);
   const [fromIngest, setFromIngest] = useState(false);
+  const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
 
   const [siteName, setSiteName] = useState("Houston Plant");
   const [siteSlug, setSiteSlug] = useState("houston-plant");
@@ -107,24 +117,37 @@ export default function InventoryPage() {
       .slice(0, 8);
   }, [completeness]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const params = new URLSearchParams(window.location.search);
-    const from = params.get("from");
-    if (from !== "ingest") return;
-    const nextName = params.get("siteName");
-    const nextSlug = params.get("siteSlug");
-    const nextAssets = Number(params.get("assets") || "");
-    const nextProfile = normalizeProfile(params.get("profile"));
-    setFromIngest(true);
+  async function startFromIngestContext(context: IngestRunContext) {
+    try {
+      setLoading(true);
+      setError(null);
 
-    if (nextName) setSiteName(nextName);
-    if (nextSlug) setSiteSlug(nextSlug);
-    if (Number.isFinite(nextAssets) && nextAssets >= 200) {
-      setTargetAssetCount(Math.min(8000, Math.max(200, nextAssets)));
+      const response = await fetch("/api/analysis/from-ingest", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteName: context.siteName,
+          siteSlug: context.siteSlug,
+          profile: context.profile,
+          records: context.records,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to analyze ingest context");
+      }
+
+      const payload = (await response.json()) as AnalysisPayload;
+      setAnalysis(payload);
+      setHandoffMessage(
+        `Showing baseline from ingested records: ${context.records.length.toLocaleString()} records for ${context.siteName}.`
+      );
+    } catch {
+      setError("Ingest handoff detected, but analysis could not be generated from that run.");
+    } finally {
+      setLoading(false);
     }
-    setProfile(nextProfile);
-  }, []);
+  }
 
   async function startAnalysis() {
     try {
@@ -156,10 +179,37 @@ export default function InventoryPage() {
   }
 
   useEffect(() => {
-    if (!fromIngest || autostarted || analysis || loading) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const from = params.get("from");
+    if (from !== "ingest") return;
+    setFromIngest(true);
+    if (autostarted || analysis || loading) return;
     setAutostarted(true);
-    startAnalysis();
-  }, [fromIngest, autostarted, analysis, loading]);
+
+    const raw = window.sessionStorage.getItem("planttrace:lastIngestRun");
+    if (!raw) {
+      setHandoffMessage(
+        "Ingest handoff requested, but no ingest payload was found in this browser session."
+      );
+      return;
+    }
+
+    try {
+      const context = JSON.parse(raw) as IngestRunContext;
+      if (!context.records?.length) {
+        setHandoffMessage("Ingest payload found, but it did not include structured records.");
+        return;
+      }
+      setSiteName(context.siteName || siteName);
+      setSiteSlug(context.siteSlug || siteSlug);
+      setTargetAssetCount(Math.min(8000, Math.max(200, context.records.length)));
+      setProfile(normalizeProfile(context.profile || null));
+      void startFromIngestContext(context);
+    } catch {
+      setHandoffMessage("Ingest payload could not be parsed.");
+    }
+  }, [autostarted, analysis, loading, siteName, siteSlug]);
 
   function runPreset(preset: "pilot" | "enterprise") {
     if (preset === "pilot") {
@@ -183,7 +233,12 @@ export default function InventoryPage() {
             <h1 className="text-3xl font-bold text-white">Start Baseline Run</h1>
             {fromIngest && (
               <div className="mt-3 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
-                Ingest handoff detected. Site context has been prefilled and baseline is auto-running.
+                Ingest handoff detected. Inventory will use the exact ingest payload when available.
+              </div>
+            )}
+            {handoffMessage && (
+              <div className="mt-3 rounded-md border border-slate-700 bg-slate-800/70 px-3 py-2 text-xs text-slate-200">
+                {handoffMessage}
               </div>
             )}
             <p className="mt-3 text-slate-400">
