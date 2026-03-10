@@ -5,6 +5,7 @@ import { type CanonAsset } from "@/types/canon";
 import type { CompletenessResult, GapAnalysis, PlantType } from "@/lib/inventory-completeness";
 import type { SiteProfile } from "@/lib/synthetic-site-generator";
 import Link from "next/link";
+import { getAccessState, type AccessState } from "@/lib/access";
 
 const Plant3DView = lazy(() => import("@/components/canon/Plant3DView"));
 
@@ -144,6 +145,14 @@ interface IngestRunContext {
   capturedAt: string;
 }
 
+interface RunHistoryEntry {
+  siteName: string;
+  siteSlug: string;
+  profile: string;
+  assets: number;
+  generatedAt: string;
+}
+
 function normalizeProfile(input: string | null): SiteProfile {
   if (!input) return "petrochemical";
   if (
@@ -178,6 +187,7 @@ export default function InventoryPage() {
   const [demoStepIndex, setDemoStepIndex] = useState(0);
   const [demoRunning, setDemoRunning] = useState(false);
   const [demoStatus, setDemoStatus] = useState<string | null>(null);
+  const [access, setAccess] = useState<AccessState>({ loggedIn: false, plan: "public" });
 
   const [siteName, setSiteName] = useState("Houston Plant");
   const [siteSlug, setSiteSlug] = useState("houston-plant");
@@ -211,6 +221,8 @@ export default function InventoryPage() {
   }, [completeness]);
 
   const totalAssets = analysis?.dataset.totalAssets ?? 0;
+  const expectedAssets = analysis?.site.targetAssetCount ?? 0;
+  const realityGapAssets = Math.abs(totalAssets - expectedAssets);
   const discoveredCount = analysis
     ? Math.min(
         totalAssets,
@@ -254,6 +266,8 @@ export default function InventoryPage() {
       return haystack.includes(query);
     });
   }, [analysis, assetSearch, networkFilter]);
+
+  const canSaveAndExport = access.loggedIn && access.plan !== "public";
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -371,6 +385,10 @@ export default function InventoryPage() {
   }
 
   useEffect(() => {
+    setAccess(getAccessState());
+  }, []);
+
+  useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("demo") === "1") {
@@ -405,6 +423,24 @@ export default function InventoryPage() {
       setHandoffMessage("Ingest payload could not be parsed.");
     }
   }, [autostarted, analysis, loading, siteName, siteSlug]);
+
+  useEffect(() => {
+    if (!analysis || !canSaveAndExport || typeof window === "undefined") return;
+
+    const key = "planttrace:run_history";
+    const current = window.localStorage.getItem(key);
+    const history = current ? (JSON.parse(current) as Array<Record<string, string | number>>) : [];
+
+    history.unshift({
+      siteName: analysis.site.siteName,
+      siteSlug: analysis.site.siteSlug,
+      profile: analysis.site.profile,
+      assets: analysis.dataset.totalAssets,
+      generatedAt: analysis.site.generatedAt,
+    });
+
+    window.localStorage.setItem(key, JSON.stringify(history.slice(0, 20)));
+  }, [analysis, canSaveAndExport]);
 
   function runPreset(preset: "pilot" | "enterprise") {
     if (preset === "pilot") {
@@ -684,6 +720,39 @@ export default function InventoryPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          {canSaveAndExport ? (
+            <span className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200">
+              Signed in · {access.plan.toUpperCase()} plan
+            </span>
+          ) : (
+            <Link
+              href="/auth"
+              className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200 hover:bg-amber-500/20"
+            >
+              Sign in to save runs, export data, and keep history
+            </Link>
+          )}
+        </div>
+
+        <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
+          <h3 className="text-sm font-semibold text-white">Infrastructure Reality Gap</h3>
+          <div className="mt-2 grid grid-cols-1 gap-2 text-xs text-slate-300 md:grid-cols-3">
+            <div className="rounded-md border border-slate-700 bg-slate-950/60 p-3">
+              Expected assets: <span className="text-slate-100">{expectedAssets.toLocaleString()}</span>
+            </div>
+            <div className="rounded-md border border-slate-700 bg-slate-950/60 p-3">
+              Observed assets: <span className="text-slate-100">{totalAssets.toLocaleString()}</span>
+            </div>
+            <div className="rounded-md border border-slate-700 bg-slate-950/60 p-3">
+              Reality gap: <span className="text-amber-300">{realityGapAssets.toLocaleString()}</span>
+            </div>
+          </div>
+          <div className="mt-2 text-[11px] text-slate-400">
+            Formula: |observed assets - expected assets|. This highlights documentation and instrumentation drift.
+          </div>
+        </div>
+
         <div className="mb-5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4">
           <div className="text-xs uppercase tracking-wide text-cyan-200">Facility Reality Gap</div>
           <div className="mt-1 text-sm text-slate-100">
@@ -766,6 +835,44 @@ export default function InventoryPage() {
           >
             Open Knowledge Graph
           </Link>
+          {canSaveAndExport ? (
+            <button
+              type="button"
+              onClick={() => {
+                const csv = [
+                  ["tag", "name", "layer", "type", "area"].join(","),
+                  ...filteredAssets.map((asset) =>
+                    [
+                      asset.tagNumber || asset.id || "",
+                      asset.name || "",
+                      asset.layer ? `L${asset.layer}` : "",
+                      asset.assetType || "",
+                      asset.engineering?.processArea || "",
+                    ]
+                      .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+                      .join(",")
+                  ),
+                ].join("\n");
+                const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `${analysis.site.siteSlug}-assets.csv`;
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+              className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-200 hover:bg-emerald-500/20"
+            >
+              Export Asset CSV
+            </button>
+          ) : (
+            <Link
+              href="/auth"
+              className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-400 hover:border-cyan-400/60"
+            >
+              Sign in to export
+            </Link>
+          )}
         </div>
 
         <div className="mb-6 rounded-xl border border-slate-800 bg-slate-900/50 p-4">
@@ -844,6 +951,17 @@ export default function InventoryPage() {
               </tbody>
             </table>
           </div>
+        </div>
+
+        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+          <h3 className="text-lg font-semibold text-white">Run History</h3>
+          {!canSaveAndExport ? (
+            <p className="mt-2 text-xs text-slate-400">
+              Sign in to retain run history across sessions and compare site baselines over time.
+            </p>
+          ) : (
+            <RunHistory />
+          )}
         </div>
 
         <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-6">
@@ -972,6 +1090,60 @@ function AgentStep({
     <div className={`rounded-md border px-3 py-2 text-sm ${tone}`}>
       <span className="mr-2 text-xs uppercase tracking-wide">{index}</span>
       {label}
+    </div>
+  );
+}
+
+function RunHistory() {
+  const [history, setHistory] = useState<RunHistoryEntry[]>([]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem("planttrace:run_history");
+      if (!raw) {
+        setHistory([]);
+        return;
+      }
+      const parsed = JSON.parse(raw) as RunHistoryEntry[];
+      setHistory(Array.isArray(parsed) ? parsed : []);
+    } catch {
+      setHistory([]);
+    }
+  }, []);
+
+  if (history.length === 0) {
+    return (
+      <p className="mt-2 text-xs text-slate-400">
+        No saved runs yet. Complete a baseline run to start building history.
+      </p>
+    );
+  }
+
+  return (
+    <div className="mt-3 overflow-auto rounded-lg border border-slate-800">
+      <table className="min-w-full text-left text-xs">
+        <thead className="bg-slate-950 text-slate-300">
+          <tr>
+            <th className="px-3 py-2">Site</th>
+            <th className="px-3 py-2">Profile</th>
+            <th className="px-3 py-2">Assets</th>
+            <th className="px-3 py-2">Generated</th>
+          </tr>
+        </thead>
+        <tbody>
+          {history.map((entry, idx) => (
+            <tr key={`${entry.siteSlug}-${entry.generatedAt}-${idx}`} className="border-t border-slate-800 text-slate-200">
+              <td className="px-3 py-2">{entry.siteName}</td>
+              <td className="px-3 py-2">{entry.profile.replace(/_/g, " ")}</td>
+              <td className="px-3 py-2">{entry.assets.toLocaleString()}</td>
+              <td className="px-3 py-2">
+                {new Date(entry.generatedAt).toLocaleString()}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

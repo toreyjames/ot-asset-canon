@@ -2,11 +2,31 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
+import { setAccessState } from "@/lib/access";
 
 type AuthMode = "signin" | "signup";
 
 export default function AuthPage() {
+  const router = useRouter();
   const [mode, setMode] = useState<AuthMode>("signin");
+  const [name, setName] = useState("");
+  const [company, setCompany] = useState("");
+  const [role, setRole] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+
+  function handleAuth() {
+    if (!email.trim() || !password.trim()) return;
+    setAccessState({
+      loggedIn: true,
+      plan: "pilot",
+      name: name.trim() || undefined,
+      company: company.trim() || undefined,
+      email: email.trim(),
+    });
+    router.push("/inventory");
+  }
 
   return (
     <div className="min-h-screen bg-[#050915] text-slate-100 px-4 py-12">
@@ -52,16 +72,17 @@ export default function AuthPage() {
         <form className="mt-5 space-y-4">
           {mode === "signup" && (
             <>
-              <Field label="Full Name" type="text" placeholder="Jane Smith" />
-              <Field label="Company" type="text" placeholder="Acme Manufacturing" />
-              <Field label="Role" type="text" placeholder="Plant Manager" />
+              <Field label="Full Name" type="text" placeholder="Jane Smith" value={name} onChange={setName} />
+              <Field label="Company" type="text" placeholder="Acme Manufacturing" value={company} onChange={setCompany} />
+              <Field label="Role" type="text" placeholder="Plant Manager" value={role} onChange={setRole} />
             </>
           )}
-          <Field label="Work Email" type="email" placeholder="you@company.com" />
-          <Field label="Password" type="password" placeholder="••••••••" />
+          <Field label="Work Email" type="email" placeholder="you@company.com" value={email} onChange={setEmail} />
+          <Field label="Password" type="password" placeholder="••••••••" value={password} onChange={setPassword} />
 
           <button
             type="button"
+            onClick={handleAuth}
             className="w-full rounded-md bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
           >
             {mode === "signin" ? "Sign In" : "Create Account"}
@@ -85,16 +106,22 @@ function Field({
   label,
   type,
   placeholder,
+  value,
+  onChange,
 }: {
   label: string;
   type: string;
   placeholder: string;
+  value: string;
+  onChange: (value: string) => void;
 }) {
   return (
     <label className="block">
       <span className="text-xs text-slate-400">{label}</span>
       <input
         type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
         className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
         placeholder={placeholder}
       />
