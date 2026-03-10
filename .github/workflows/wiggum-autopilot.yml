@@ -51,4 +51,4 @@ jobs:
           labels: |
             automation
             wiggum
-
+            automerge
