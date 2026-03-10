@@ -69,6 +69,30 @@ const DEPLOYMENT_OPTIONS = [
   },
 ];
 
+const QUICK_START = [
+  {
+    step: "Step 1",
+    title: "Generate Demo Data",
+    body: "Load a realistic plant pack with OT + engineering context.",
+    cta: "Open Data Gathering",
+    href: "/ingest",
+  },
+  {
+    step: "Step 2",
+    title: "Build Inventory Baseline",
+    body: "Create canonical assets and confirm what can be secured.",
+    cta: "Open Inventory",
+    href: "/inventory",
+  },
+  {
+    step: "Step 3",
+    title: "Explore Plant Map + Graph",
+    body: "Click through dependencies, systems, and continuity paths.",
+    cta: "Open Explorer",
+    href: "/explorer",
+  },
+];
+
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#050915] text-slate-100">
@@ -82,68 +106,50 @@ export default function HomePage() {
           <PlantTraceLogo />
           <div className="hidden lg:flex items-center gap-2">
             <Link href="/ingest" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Ingest
-            </Link>
-            <Link href="/explorer" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Explorer
-            </Link>
-            <Link href="/ai" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Query
+              1. Gather Data
             </Link>
             <Link href="/inventory" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Inventory
+              2. Inventory
             </Link>
-            <Link href="/framework" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              Framework
-            </Link>
-            <Link href="/roi" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
-              ROI
+            <Link href="/explorer" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
+              3. Map + Query
             </Link>
           </div>
           <div className="flex items-center gap-2">
             <Link href="/login" className="px-3 py-2 text-sm rounded-md border border-slate-700 hover:border-cyan-400/60">
               Login
             </Link>
-            <Link href="/inventory" className="px-3 py-2 text-sm rounded-md bg-cyan-400 text-slate-950 font-medium hover:bg-cyan-300">
-              Experience Demo
+            <Link href="/ingest" className="px-3 py-2 text-sm rounded-md bg-cyan-400 text-slate-950 font-medium hover:bg-cyan-300">
+              Start Guided Demo
             </Link>
           </div>
         </header>
 
         <div className="lg:hidden mt-4 flex flex-wrap gap-2">
           <Link href="/ingest" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
-            Ingest
-          </Link>
-          <Link href="/explorer" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
-            Explorer
-          </Link>
-          <Link href="/ai" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
-            Query
+            1. Gather Data
           </Link>
           <Link href="/inventory" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
-            Inventory
+            2. Inventory
           </Link>
-          <Link href="/framework" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
-            Framework
-          </Link>
-          <Link href="/roi" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
-            ROI
+          <Link href="/explorer" className="px-3 py-1.5 text-xs rounded-md border border-slate-700 hover:border-cyan-400/60">
+            3. Map + Query
           </Link>
         </div>
 
         <section className="mt-14 grid lg:grid-cols-[1.08fr_1fr] gap-10 items-center section-pop">
           <div className="animate-fade-up">
             <p className="inline-flex items-center rounded-full border border-cyan-400/35 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
-              Built for OT teams that want momentum, not friction
+              Built for OT teams that want a clear first run
             </p>
             <h1 className="mt-5 text-4xl md:text-7xl font-semibold tracking-tight leading-[0.92] headline-display">
-              Reindustrialize With Clarity.
+              Know What You Have.
               <br />
-              Plant Floor To CMDB.
+              Know If It Is Covered.
             </h1>
             <p className="mt-5 text-slate-300 text-lg max-w-xl">
-              PlantTrace is the missing layer between what is on the plant floor and what ends up in your CMDB.
-              We combine discovery tools, engineering files, and system logs into one trusted asset view your teams can act on.
+              PlantTrace turns OT discovery exports and engineering files into one trusted plant inventory baseline.
+              Start with one guided run, then scale the same method across plants.
             </p>
             <p className="mt-3 text-slate-300 text-base max-w-xl">
               Agent-guided deployment turns onboarding into a repeatable product workflow across single plants, portfolio rollouts,
@@ -151,11 +157,11 @@ export default function HomePage() {
             </p>
 
             <div className="mt-7 flex flex-wrap gap-3">
-              <Link href="/inventory" className="px-5 py-3 rounded-md bg-cyan-400 text-slate-950 font-semibold hover:bg-cyan-300">
-                Start With One Plant
+              <Link href="/ingest" className="px-5 py-3 rounded-md bg-cyan-400 text-slate-950 font-semibold hover:bg-cyan-300">
+                Start Guided Run
               </Link>
-              <Link href="/framework" className="px-5 py-3 rounded-md border border-slate-600 hover:border-cyan-400/70">
-                See The Method
+              <Link href="/inventory" className="px-5 py-3 rounded-md border border-slate-600 hover:border-cyan-400/70">
+                See Demo Inventory
               </Link>
             </div>
 
@@ -167,6 +173,31 @@ export default function HomePage() {
           </div>
 
           <HeroPlantMap />
+        </section>
+
+        <section className="mt-12 section-pop">
+          <div className="rounded-2xl border border-cyan-500/30 bg-cyan-500/10 p-5 md:p-6">
+            <div className="text-xs uppercase tracking-wide text-cyan-200">Start Here</div>
+            <h2 className="mt-2 text-2xl md:text-3xl font-semibold">One Path. Three Steps.</h2>
+            <p className="mt-2 text-slate-300">
+              If this is your first visit, follow this exact sequence.
+            </p>
+            <div className="mt-5 grid md:grid-cols-3 gap-4">
+              {QUICK_START.map((item) => (
+                <div key={item.title} className="rounded-xl border border-slate-700 bg-slate-900/70 p-4">
+                  <div className="text-[11px] uppercase tracking-wide text-cyan-300">{item.step}</div>
+                  <div className="mt-1 text-lg font-semibold">{item.title}</div>
+                  <p className="mt-2 text-sm text-slate-300">{item.body}</p>
+                  <Link
+                    href={item.href}
+                    className="mt-4 inline-block rounded-md border border-cyan-400/50 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-500/20"
+                  >
+                    {item.cta}
+                  </Link>
+                </div>
+              ))}
+            </div>
+          </div>
         </section>
 
         <Ribbon

@@ -307,6 +307,10 @@ export default function IngestPage() {
           OT Safety Notice: PlantTrace is data-only in this workflow. It does not write to control systems,
           change setpoints, modify PLC logic, or impact live process operations.
         </div>
+        <div className="mt-4 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
+          Quick start: 1) Generate Demo Pack 2) Confirm demo file appears in Data File 3) Click Start Data Gathering Agent
+          4) Continue to Inventory.
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6">
