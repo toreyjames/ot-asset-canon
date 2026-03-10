@@ -106,6 +106,7 @@ export default function IngestPage() {
   const [demoRunLoading, setDemoRunLoading] = useState(false);
   const [demoRunMessage, setDemoRunMessage] = useState<string | null>(null);
   const [virtualDemoFileName, setVirtualDemoFileName] = useState<string | null>(null);
+  const [autoDemoTriggered, setAutoDemoTriggered] = useState(false);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -198,7 +199,7 @@ export default function IngestPage() {
     }
   };
 
-  const runDemoPack = async () => {
+  const runDemoPack = async (autoStart = false) => {
     setDemoLoading(true);
     setDemoError(null);
     setDemoResult(null);
@@ -229,6 +230,10 @@ export default function IngestPage() {
       setDemoNextStep(
         "Demo loaded. Next: upload your OT discovery export first, then upload Engineering / Facility File to improve model quality."
       );
+
+      if (autoStart) {
+        await startWithDemoPack(data);
+      }
     } catch (err) {
       setDemoError(err instanceof Error ? err.message : "Unknown error");
     } finally {
@@ -236,8 +241,9 @@ export default function IngestPage() {
     }
   };
 
-  const startWithDemoPack = async () => {
-    if (!demoResult?.sites?.length) {
+  const startWithDemoPack = async (overrideDemoResult?: HybridDemoResponse) => {
+    const activeDemo = overrideDemoResult || demoResult;
+    if (!activeDemo?.sites?.length) {
       setError("Generate a demo pack first, then start the data gathering agent.");
       return;
     }
@@ -249,7 +255,7 @@ export default function IngestPage() {
     setError(null);
 
     try {
-      const site = demoResult.sites[0];
+      const site = activeDemo.sites[0];
       setDemoRunMessage(`Running pipeline from demo pack (${site.siteName})...`);
       const records = site.assets.slice(0, 1200).map((asset, index) => ({
         id: asset.tagNumber || asset.id || `demo-${index + 1}`,
@@ -307,6 +313,15 @@ export default function IngestPage() {
       setDemoRunLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (autoDemoTriggered) return;
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get("demo") !== "1") return;
+    setAutoDemoTriggered(true);
+    void runDemoPack(true);
+  }, [autoDemoTriggered]);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -623,7 +638,9 @@ export default function IngestPage() {
 
             <button
               type="button"
-              onClick={runDemoPack}
+              onClick={() => {
+                void runDemoPack(false);
+              }}
               disabled={demoLoading}
               className="mt-3 w-full rounded-md border border-cyan-400/50 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100 hover:bg-cyan-500/20 disabled:opacity-60"
             >
@@ -653,7 +670,9 @@ export default function IngestPage() {
                 )}
                 <button
                   type="button"
-                  onClick={startWithDemoPack}
+                  onClick={() => {
+                    void startWithDemoPack();
+                  }}
                   disabled={demoRunLoading}
                   className="w-full rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100 hover:bg-emerald-500/20 disabled:opacity-60"
                 >
