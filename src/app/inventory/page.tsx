@@ -172,6 +172,14 @@ export default function InventoryPage() {
       .slice(0, 8);
   }, [completeness]);
 
+  const totalAssets = analysis?.dataset.totalAssets ?? 0;
+  const discoveredCount = analysis
+    ? Math.round((analysis.coverageBaseline.discoveryCoveragePercent / 100) * totalAssets)
+    : 0;
+  const evidenceBackedCount = analysis
+    ? Math.round((analysis.coverageBaseline.evidencedPercent / 100) * totalAssets)
+    : 0;
+
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   async function startFromIngestContext(context: IngestRunContext) {
@@ -539,24 +547,18 @@ export default function InventoryPage() {
 
         <div className="absolute bottom-6 left-6 z-20">
           <div className="bg-black/90 backdrop-blur-sm rounded-xl border border-slate-700 p-5 w-80 relative">
-            <div className="text-slate-400 text-xs uppercase tracking-wider mb-3">Reconstruction Confidence</div>
+            <div className="text-slate-400 text-xs uppercase tracking-wider mb-3">Total Assets Discovered</div>
             <div className="flex items-end gap-3 mb-4">
-              <div className={`text-5xl font-bold ${
-                completeness?.canRunPlant ? "text-green-400" : (completeness?.overallScore ?? 0) >= 60 ? "text-yellow-400" : "text-red-400"
-              }`}>
-                {completeness?.overallScore ?? 0}%
+              <div className="text-5xl font-bold text-cyan-300">
+                {totalAssets.toLocaleString()}
               </div>
-              <div className={`text-sm font-medium px-2 py-1 rounded mb-1 ${
-                completeness?.canRunPlant
-                  ? "bg-green-500/20 text-green-400 border border-green-500/30"
-                  : "bg-red-500/20 text-red-400 border border-red-500/30"
-              }`}>
-                {completeness?.canRunPlant ? "Runnable" : "Incomplete"}
+              <div className="text-sm font-medium px-2 py-1 rounded mb-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                {analysis.coverageBaseline.discoveryCoveragePercent}% feed presence
               </div>
             </div>
             <div className="mt-2 flex items-center justify-between">
               <div className="text-xs text-slate-400">
-                Visualization sample: {analysis.dataset.visualizationAssets} assets
+                Evidence-backed: {evidenceBackedCount.toLocaleString()} · Completeness: {completeness?.overallScore ?? 0}%
               </div>
               <button
                 onClick={() => setGapsOpen((v) => !v)}
@@ -605,10 +607,28 @@ export default function InventoryPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <MetricCard label="Evidence-backed Assets" value={`${analysis.coverageBaseline.evidencedPercent}%`} sub="Verified by source evidence" />
-          <MetricCard label="Discovery Coverage" value={`${analysis.coverageBaseline.discoveryCoveragePercent}%`} sub="Present in discovery feeds" />
+          <MetricCard label="Evidence-backed Assets" value={`${analysis.coverageBaseline.evidencedPercent}%`} sub={`${evidenceBackedCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets corroborated`} />
+          <MetricCard label="Discovery Coverage" value={`${analysis.coverageBaseline.discoveryCoveragePercent}%`} sub={`${discoveredCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets seen in at least one feed`} />
           <MetricCard label="Security Coverage" value={`${analysis.coverageBaseline.coveragePercent}%`} sub="Securable assets covered" />
           <MetricCard label="Coverage Gaps" value={analysis.coverageBaseline.uncoveredAssets.toLocaleString()} sub="Securable assets without baseline" warning />
+        </div>
+
+        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+          <h3 className="text-sm font-semibold text-white">How These Metrics Relate</h3>
+          <div className="mt-3 grid gap-3 md:grid-cols-3 text-xs text-slate-300">
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="text-cyan-300 font-medium">Discovery Coverage</div>
+              <div className="mt-1">Assets seen in at least one ingestion source.</div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="text-cyan-300 font-medium">Evidence-backed Assets</div>
+              <div className="mt-1">Assets with corroborating quality signals (verified/evidence attributes).</div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="text-cyan-300 font-medium">Completeness Score</div>
+              <div className="mt-1">Engineering + OT model sufficiency to represent plant operation layers.</div>
+            </div>
+          </div>
         </div>
 
         <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-6 mb-8">
