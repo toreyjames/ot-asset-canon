@@ -684,24 +684,40 @@ export default function InventoryPage() {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="mb-5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4">
+          <div className="text-xs uppercase tracking-wide text-cyan-200">Facility Reality Gap</div>
+          <div className="mt-1 text-sm text-slate-100">
+            Difference between documented infrastructure and operational reality. PlantTrace closes this gap in measurable steps.
+          </div>
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <MetricCard
             label="Asset Evidence Quality"
             value={`${analysis.coverageBaseline.evidencedPercent}%`}
             sub={`${evidenceBackedCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets corroborated`}
             help="Backed by stronger evidence quality signals (verified fields and corroboration), not just presence in one source."
+            formula="evidence-backed assets / total assets"
+            owner="Engineering + OT Data Steward"
+            source="Discovery exports + engineering context"
           />
           <MetricCard
             label="Assets Found In Sources"
             value={`${analysis.coverageBaseline.discoveryCoveragePercent}%`}
             sub={`${discoveredCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets seen in at least one source`}
             help="Presence metric only: an asset is counted once discovered in any approved source feed."
+            formula="assets seen in >=1 source / total assets"
+            owner="OT Operations"
+            source="Connected source bundle"
           />
           <MetricCard
             label="Assets With Security Baseline"
             value={`${analysis.coverageBaseline.coveragePercent}%`}
             sub="Securable assets covered"
             help="Coverage over securable assets only (typically Layer 2+)."
+            formula="covered securable assets / securable assets"
+            owner="Security Operations"
+            source="Security baseline signals + telemetry"
           />
           <MetricCard
             label="Assets Missing Security Baseline"
@@ -709,7 +725,32 @@ export default function InventoryPage() {
             sub="Securable assets without baseline"
             warning
             help="Gap count can remain high even at 100% discovery because discovery ≠ complete engineering/security baseline."
+            formula="securable assets - covered securable assets"
+            owner="Security + Reliability"
+            source="Coverage gap computation"
           />
+        </div>
+
+        <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
+          <h3 className="text-sm font-semibold text-white">Metric Definitions (Operational)</h3>
+          <div className="mt-3 grid gap-3 md:grid-cols-2 text-xs text-slate-300">
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="text-cyan-300 font-medium">Question 1: How many assets do we have?</div>
+              <div className="mt-1">Use <span className="text-slate-100">Total Assets Discovered</span> and <span className="text-slate-100">Assets Found In Sources</span>.</div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="text-cyan-300 font-medium">Question 2: What are we clearly missing?</div>
+              <div className="mt-1">Use <span className="text-slate-100">Immediate Missing Items</span> and <span className="text-slate-100">Data Requests By Unit/Layer</span>.</div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="text-cyan-300 font-medium">Question 3: How do we know?</div>
+              <div className="mt-1">Use <span className="text-slate-100">Asset Evidence Quality</span> and per-asset source provenance in the unified list.</div>
+            </div>
+            <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
+              <div className="text-cyan-300 font-medium">Question 4: What data do we need next?</div>
+              <div className="mt-1">Use missing-element rows and unit-layer requests as the immediate collection plan.</div>
+            </div>
+          </div>
         </div>
 
         <div className="mb-4 flex flex-wrap gap-2">
@@ -872,12 +913,18 @@ function MetricCard({
   sub,
   warning,
   help,
+  formula,
+  owner,
+  source,
 }: {
   label: string;
   value: string | number;
   sub: string;
   warning?: boolean;
   help?: string;
+  formula?: string;
+  owner?: string;
+  source?: string;
 }) {
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5">
@@ -894,6 +941,13 @@ function MetricCard({
       </div>
       <div className={`text-3xl font-bold ${warning ? "text-yellow-400" : "text-white"}`}>{value}</div>
       <div className="text-xs text-slate-500 mt-1">{sub}</div>
+      {(formula || owner || source) && (
+        <div className="mt-2 space-y-1 text-[11px] text-slate-400">
+          {formula && <div>Formula: <span className="text-slate-300">{formula}</span></div>}
+          {owner && <div>Owner: <span className="text-slate-300">{owner}</span></div>}
+          {source && <div>Source: <span className="text-slate-300">{source}</span></div>}
+        </div>
+      )}
     </div>
   );
 }
