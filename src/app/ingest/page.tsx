@@ -155,7 +155,14 @@ export default function IngestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) return;
+    if (!file && !demoResult) return;
+
+    if (!file && demoResult) {
+      await startWithDemoPack();
+      return;
+    }
+    const selectedFile = file;
+    if (!selectedFile) return;
 
     setIsLoading(true);
     setStepIndex(0);
@@ -164,7 +171,7 @@ export default function IngestPage() {
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      formData.append("file", selectedFile);
       formData.append("source", uploadSource);
 
       const response = await fetch("/api/ingest", {
@@ -468,12 +475,16 @@ export default function IngestPage() {
 
             <button
               type="submit"
-              disabled={!file || isLoading || sourceBundle.length === 0}
+              disabled={(!file && !demoResult) || isLoading || demoRunLoading || sourceBundle.length === 0}
               className="w-full rounded-md bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
             >
-              {isLoading ? "Agent Running..." : "Start Data Gathering Agent"}
+              {isLoading || demoRunLoading
+                ? "Agent Running..."
+                : demoResult
+                ? "Start Data Gathering Agent (Use Demo Pack)"
+                : "Start Data Gathering Agent"}
             </button>
-            {!file && (
+            {!file && !demoResult && (
               <p className="text-[11px] text-amber-300">
                 Upload a file to run this button, or use the Demo Pack Runner path on the right.
               </p>
