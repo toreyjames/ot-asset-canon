@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 type IngestionSource =
@@ -104,6 +105,7 @@ export default function IngestPage() {
   const [demoNextStep, setDemoNextStep] = useState<string | null>(null);
   const [demoRunLoading, setDemoRunLoading] = useState(false);
   const [demoRunMessage, setDemoRunMessage] = useState<string | null>(null);
+  const [virtualDemoFileName, setVirtualDemoFileName] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -155,6 +157,9 @@ export default function IngestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (sourceBundle.length === 0) {
+      setSourceBundle([uploadSource || "manual"]);
+    }
     if (!file && !demoResult) return;
 
     if (!file && demoResult) {
@@ -211,6 +216,9 @@ export default function IngestPage() {
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Failed to generate demo pack");
       setDemoResult(data);
+      setVirtualDemoFileName(
+        `${data.pack}-${new Date().toISOString().slice(0, 10)}.json`
+      );
 
       const defaults = PACK_DEFAULTS[demoPack];
       setOperatingScope(defaults.scope);
@@ -267,6 +275,7 @@ export default function IngestPage() {
       setDemoRunMessage(
         `Started from demo pack (${site.siteName}). Canonical assets: ${data.summary?.canonicalAssets ?? 0}.`
       );
+      setStepIndex(AGENT_STEPS.length - 1);
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Unknown error";
       setDemoRunMessage(msg);
@@ -445,11 +454,18 @@ export default function IngestPage() {
                 <input
                   type="file"
                   accept=".csv,.json"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
+                  onChange={(e) => {
+                    setFile(e.target.files?.[0] || null);
+                    setVirtualDemoFileName(null);
+                  }}
                   className="hidden"
                 />
                 {file ? (
                   <span className="text-sm text-slate-100">{file.name}</span>
+                ) : virtualDemoFileName ? (
+                  <span className="text-sm text-emerald-200">
+                    Demo data staged as virtual file: {virtualDemoFileName}
+                  </span>
                 ) : (
                   <span className="text-sm text-slate-300">Click to upload CSV/JSON</span>
                 )}
@@ -475,7 +491,7 @@ export default function IngestPage() {
 
             <button
               type="submit"
-              disabled={(!file && !demoResult) || isLoading || demoRunLoading || sourceBundle.length === 0}
+              disabled={(!file && !demoResult) || isLoading || demoRunLoading}
               className="w-full rounded-md bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
             >
               {isLoading || demoRunLoading
@@ -496,14 +512,28 @@ export default function IngestPage() {
 
           {error && <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
 
-          {result && (
-            <div className="mt-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
-              <div className="font-semibold">Run Complete · {result.status}</div>
-              <div className="mt-1">Created: {result.assetsCreated.toLocaleString()} · Updated: {result.assetsUpdated.toLocaleString()}</div>
-              <div className="mt-1">Estimated analyst hours saved this run: ~{estimatedHoursSaved}</div>
-              {result.errors.length > 0 && <div className="mt-1 text-amber-200">Errors: {result.errors.length}</div>}
-            </div>
-          )}
+            {result && (
+              <div className="mt-4 rounded-md border border-emerald-500/30 bg-emerald-500/10 p-4 text-sm text-emerald-100">
+                <div className="font-semibold">Run Complete · {result.status}</div>
+                <div className="mt-1">Created: {result.assetsCreated.toLocaleString()} · Updated: {result.assetsUpdated.toLocaleString()}</div>
+                <div className="mt-1">Estimated analyst hours saved this run: ~{estimatedHoursSaved}</div>
+                {result.errors.length > 0 && <div className="mt-1 text-amber-200">Errors: {result.errors.length}</div>}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Link
+                    href="/inventory"
+                    className="rounded-md border border-emerald-400/50 bg-emerald-500/10 px-3 py-1.5 text-xs text-emerald-100 hover:bg-emerald-500/20"
+                  >
+                    Continue to Inventory
+                  </Link>
+                  <Link
+                    href="/explorer"
+                    className="rounded-md border border-cyan-400/50 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-500/20"
+                  >
+                    Open Graph Explorer
+                  </Link>
+                </div>
+              </div>
+            )}
         </div>
 
         <div className="rounded-2xl border border-slate-700/70 bg-slate-900/75 p-6">
