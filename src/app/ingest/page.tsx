@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 
 type IngestionSource =
@@ -88,6 +89,7 @@ const ENGINEERING_SOURCES: IngestionSource[] = ["manual"];
 const NETWORK_SOURCES: IngestionSource[] = ["manual", "nessus", "qualys", "tenable"];
 
 export default function IngestPage() {
+  const router = useRouter();
   const [uploadSource, setUploadSource] = useState<IngestionSource>("claroty");
   const [sourceBundle, setSourceBundle] = useState<IngestionSource[]>(["claroty"]);
   const [deploymentMode, setDeploymentMode] = useState<DeploymentMode>("customer_cloud");
@@ -107,6 +109,7 @@ export default function IngestPage() {
   const [demoRunMessage, setDemoRunMessage] = useState<string | null>(null);
   const [virtualDemoFileName, setVirtualDemoFileName] = useState<string | null>(null);
   const [autoDemoTriggered, setAutoDemoTriggered] = useState(false);
+  const [demoMode, setDemoMode] = useState(false);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -319,9 +322,94 @@ export default function IngestPage() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     if (params.get("demo") !== "1") return;
+    setDemoMode(true);
     setAutoDemoTriggered(true);
     void runDemoPack(true);
   }, [autoDemoTriggered]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    setDemoMode(params.get("demo") === "1");
+  }, []);
+
+  useEffect(() => {
+    if (!demoMode || !result || isLoading || demoRunLoading) return;
+    const timer = setTimeout(() => {
+      router.push(inventoryContinueHref);
+    }, 1200);
+    return () => clearTimeout(timer);
+  }, [demoMode, result, isLoading, demoRunLoading, router]);
+
+  if (demoMode) {
+    return (
+      <div className="min-h-screen bg-[#050915] text-slate-100 px-4 py-10">
+        <div className="mx-auto max-w-3xl">
+          <div className="rounded-2xl border border-slate-700/70 bg-slate-900/80 p-6 md:p-8">
+            <div className="inline-flex rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
+              Guided Demo Run
+            </div>
+            <h1 className="mt-3 text-3xl font-semibold text-white">Running PlantTrace Demo</h1>
+            <p className="mt-2 text-slate-300">
+              This flow is automatic. We generate demo records, run the data gathering pipeline, then open Inventory.
+            </p>
+
+            <div className="mt-6 space-y-2">
+              {AGENT_STEPS.map((step, idx) => {
+                const state = result
+                  ? "done"
+                  : isLoading || demoLoading || demoRunLoading
+                  ? idx < stepIndex
+                    ? "done"
+                    : idx === stepIndex
+                    ? "active"
+                    : "pending"
+                  : "pending";
+                return <AgentStep key={step} index={idx + 1} label={step} state={state} />;
+              })}
+            </div>
+
+            <div className="mt-5 rounded-md border border-slate-700 bg-slate-950/70 p-3 text-sm text-slate-200">
+              {demoLoading || demoRunLoading || isLoading
+                ? "Demo is running..."
+                : result
+                ? `Run complete. ${result.assetsCreated.toLocaleString()} canonical assets created. Redirecting to Inventory...`
+                : "Preparing demo run..."}
+            </div>
+
+            {demoRunMessage && (
+              <div className="mt-3 text-sm text-slate-300">{demoRunMessage}</div>
+            )}
+
+            {(error || demoError) && (
+              <div className="mt-3 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+                {error || demoError}
+              </div>
+            )}
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  void runDemoPack(true);
+                }}
+                disabled={demoLoading || demoRunLoading || isLoading}
+                className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
+              >
+                {demoLoading || demoRunLoading || isLoading ? "Running..." : "Run Demo Again"}
+              </button>
+              <Link
+                href="/"
+                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-cyan-400/60"
+              >
+                Back Home
+              </Link>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
