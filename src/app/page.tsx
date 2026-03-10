@@ -18,7 +18,7 @@ export default function HomePage() {
         <header className="flex items-center justify-between">
           <PlantTraceLogo />
           <Link
-            href="/login"
+            href="/auth"
             className="rounded-md border border-slate-700 px-3 py-2 text-sm hover:border-cyan-400/60"
           >
             Login
