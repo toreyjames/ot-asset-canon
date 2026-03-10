@@ -598,30 +598,30 @@ export default function InventoryPage() {
 
         <div className="absolute bottom-6 left-6 z-20">
           <div className="bg-black/90 backdrop-blur-sm rounded-xl border border-slate-700 p-5 w-80 relative">
-            <div className="text-slate-400 text-xs uppercase tracking-wider mb-3">Total Assets Discovered</div>
+            <div className="text-slate-400 text-xs uppercase tracking-wider mb-3">What You Have Right Now</div>
             <div className="flex items-end gap-3 mb-4">
               <div className="text-5xl font-bold text-cyan-300">
                 {totalAssets.toLocaleString()}
               </div>
               <div className="text-sm font-medium px-2 py-1 rounded mb-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                {analysis.coverageBaseline.discoveryCoveragePercent}% source-seen
+                {analysis.coverageBaseline.discoveryCoveragePercent}% seen in sources
               </div>
             </div>
             <div className="mt-2 flex items-center justify-between">
               <div className="text-xs text-slate-400">
-                Evidence-backed: {evidenceBackedCount.toLocaleString()} · Completeness: {completeness?.overallScore ?? 0}%
+                Evidence-backed: {evidenceBackedCount.toLocaleString()} · Model completeness: {completeness?.overallScore ?? 0}%
               </div>
               <button
                 onClick={() => setGapsOpen((v) => !v)}
                 className="text-xs px-2 py-1 rounded border border-red-500/40 bg-red-500/10 text-red-300 hover:bg-red-500/20"
               >
-                {criticalGaps} critical gaps
+                {criticalGaps} critical actions
               </button>
             </div>
 
             {gapsOpen && (
               <div className="absolute left-0 right-0 mt-3 bg-slate-950 border border-slate-700 rounded-lg p-3 z-30">
-                <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">Critical Gaps</div>
+                <div className="text-xs uppercase tracking-wider text-slate-400 mb-2">Top Critical Actions</div>
                 {topCriticalGaps.length === 0 ? (
                   <div className="text-xs text-slate-500">No critical gaps in this run.</div>
                 ) : (
@@ -659,25 +659,25 @@ export default function InventoryPage() {
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
           <MetricCard
-            label="Evidence-backed Assets"
+            label="Asset Evidence Quality"
             value={`${analysis.coverageBaseline.evidencedPercent}%`}
             sub={`${evidenceBackedCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets corroborated`}
             help="Backed by stronger evidence quality signals (verified fields and corroboration), not just presence in one source."
           />
           <MetricCard
-            label="Discovery Coverage"
+            label="Assets Found In Sources"
             value={`${analysis.coverageBaseline.discoveryCoveragePercent}%`}
             sub={`${discoveredCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets seen in at least one source`}
             help="Presence metric only: an asset is counted once discovered in any approved source feed."
           />
           <MetricCard
-            label="Security Coverage"
+            label="Assets With Security Baseline"
             value={`${analysis.coverageBaseline.coveragePercent}%`}
             sub="Securable assets covered"
             help="Coverage over securable assets only (typically Layer 2+)."
           />
           <MetricCard
-            label="Coverage Gaps"
+            label="Assets Missing Security Baseline"
             value={analysis.coverageBaseline.uncoveredAssets.toLocaleString()}
             sub="Securable assets without baseline"
             warning
@@ -686,19 +686,19 @@ export default function InventoryPage() {
         </div>
 
         <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
-          <h3 className="text-sm font-semibold text-white">How These Metrics Relate</h3>
+          <h3 className="text-sm font-semibold text-white">Plant Manager View: How Assets Are Performing</h3>
           <div className="mt-3 grid gap-3 md:grid-cols-3 text-xs text-slate-300">
             <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-              <div className="text-cyan-300 font-medium">Discovery Coverage</div>
-              <div className="mt-1">Assets seen in at least one ingestion source.</div>
+              <div className="text-cyan-300 font-medium">1) What do I have?</div>
+              <div className="mt-1">Total discovered assets and source-seen percentage answer inventory visibility.</div>
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-              <div className="text-cyan-300 font-medium">Evidence-backed Assets</div>
-              <div className="mt-1">Assets with corroborating quality signals (verified/evidence attributes).</div>
+              <div className="text-cyan-300 font-medium">2) How are they performing?</div>
+              <div className="mt-1">Evidence quality + security baseline coverage indicate operational confidence and control readiness.</div>
             </div>
             <div className="rounded-lg border border-slate-700 bg-slate-950/60 p-3">
-              <div className="text-cyan-300 font-medium">Completeness Score</div>
-              <div className="mt-1">Engineering + OT model sufficiency to represent plant operation layers.</div>
+              <div className="text-cyan-300 font-medium">3) What needs action now?</div>
+              <div className="mt-1">Critical actions and baseline gaps show where teams should focus next.</div>
             </div>
           </div>
         </div>
