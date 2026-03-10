@@ -47,12 +47,16 @@ export default function HomePage() {
               Run Demo Now
             </Link>
             <Link
-              href="/inventory"
+              href="/auth"
               className="rounded-md border border-slate-600 px-6 py-3 text-sm hover:border-cyan-400/70"
             >
-              View Inventory
+              Login
             </Link>
           </div>
+
+          <p className="mt-3 text-xs text-slate-400">
+            Pricing is scoped by plant count and asset complexity. Pilot starts with one site.
+          </p>
 
           <div className="mt-14 grid w-full gap-3 md:grid-cols-3">
             {PRINCIPLES.map((item) => (
