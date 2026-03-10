@@ -1,0 +1,54 @@
+name: WIGGUM Autopilot PR
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "45 7 * * *"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  autopilot-packet:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build health gate
+        run: npm run build
+
+      - name: Generate autopilot packet
+        run: bash scripts/wiggum-autopilot-packet.sh
+
+      - name: Create autopilot PR
+        uses: peter-evans/create-pull-request@v7
+        with:
+          commit-message: "chore: update WIGGUM autopilot status packet"
+          branch: "chore/wiggum-autopilot-packet"
+          delete-branch: true
+          title: "chore: WIGGUM autopilot status packet"
+          body: |
+            Automated nightly WIGGUM packet.
+
+            Includes:
+            - Build-health gate result (passed before generation)
+            - Refreshed status snapshot
+            - Next recommended backlog items from runbook
+
+            Merge to keep a continuous execution trail between live sessions.
+          labels: |
+            automation
+            wiggum
+

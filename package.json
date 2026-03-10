@@ -8,6 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "wiggum:check": "bash scripts/wiggum-check.sh",
+    "wiggum:packet": "bash scripts/wiggum-autopilot-packet.sh",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
