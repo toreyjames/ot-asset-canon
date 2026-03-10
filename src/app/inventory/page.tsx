@@ -604,7 +604,7 @@ export default function InventoryPage() {
                 {totalAssets.toLocaleString()}
               </div>
               <div className="text-sm font-medium px-2 py-1 rounded mb-1 bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                {analysis.coverageBaseline.discoveryCoveragePercent}% feed presence
+                {analysis.coverageBaseline.discoveryCoveragePercent}% source-seen
               </div>
             </div>
             <div className="mt-2 flex items-center justify-between">
@@ -658,10 +658,31 @@ export default function InventoryPage() {
 
       <div className="max-w-7xl mx-auto px-4 py-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <MetricCard label="Evidence-backed Assets" value={`${analysis.coverageBaseline.evidencedPercent}%`} sub={`${evidenceBackedCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets corroborated`} />
-          <MetricCard label="Discovery Coverage" value={`${analysis.coverageBaseline.discoveryCoveragePercent}%`} sub={`${discoveredCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets seen in at least one feed`} />
-          <MetricCard label="Security Coverage" value={`${analysis.coverageBaseline.coveragePercent}%`} sub="Securable assets covered" />
-          <MetricCard label="Coverage Gaps" value={analysis.coverageBaseline.uncoveredAssets.toLocaleString()} sub="Securable assets without baseline" warning />
+          <MetricCard
+            label="Evidence-backed Assets"
+            value={`${analysis.coverageBaseline.evidencedPercent}%`}
+            sub={`${evidenceBackedCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets corroborated`}
+            help="Backed by stronger evidence quality signals (verified fields and corroboration), not just presence in one source."
+          />
+          <MetricCard
+            label="Discovery Coverage"
+            value={`${analysis.coverageBaseline.discoveryCoveragePercent}%`}
+            sub={`${discoveredCount.toLocaleString()} / ${totalAssets.toLocaleString()} assets seen in at least one source`}
+            help="Presence metric only: an asset is counted once discovered in any approved source feed."
+          />
+          <MetricCard
+            label="Security Coverage"
+            value={`${analysis.coverageBaseline.coveragePercent}%`}
+            sub="Securable assets covered"
+            help="Coverage over securable assets only (typically Layer 2+)."
+          />
+          <MetricCard
+            label="Coverage Gaps"
+            value={analysis.coverageBaseline.uncoveredAssets.toLocaleString()}
+            sub="Securable assets without baseline"
+            warning
+            help="Gap count can remain high even at 100% discovery because discovery ≠ complete engineering/security baseline."
+          />
         </div>
 
         <div className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-5">
@@ -732,6 +753,22 @@ export default function InventoryPage() {
           )}
         </div>
 
+        <div className="mb-4 flex flex-wrap gap-2">
+          <a
+            href="#asset-list"
+            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:border-cyan-400/60"
+          >
+            Jump to Asset List
+          </a>
+          <button
+            type="button"
+            onClick={() => setActiveView("graph")}
+            className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-200 hover:border-cyan-400/60"
+          >
+            Open Knowledge Graph
+          </button>
+        </div>
+
         <div className="mb-8">
           {activeView === "process" && (
             <ProcessMap assets={analysis.assets} onAssetClick={setSelectedAsset} showNetworkOverlay={showNetworkOverlay} />
@@ -767,6 +804,37 @@ export default function InventoryPage() {
                 <li className="text-slate-500">No blind spots detected in sampled baseline.</li>
               )}
             </ul>
+          </div>
+        </div>
+
+        <div id="asset-list" className="mb-8 rounded-xl border border-slate-800 bg-slate-900/50 p-6">
+          <div className="mb-3 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-white">Asset List (Sample)</h3>
+            <div className="text-xs text-slate-400">Showing first 40 of {analysis.assets.length.toLocaleString()} rendered assets</div>
+          </div>
+          <div className="overflow-auto rounded-lg border border-slate-800">
+            <table className="min-w-full text-left text-xs">
+              <thead className="bg-slate-950 text-slate-300">
+                <tr>
+                  <th className="px-3 py-2">Tag</th>
+                  <th className="px-3 py-2">Name</th>
+                  <th className="px-3 py-2">Layer</th>
+                  <th className="px-3 py-2">Type</th>
+                  <th className="px-3 py-2">Area</th>
+                </tr>
+              </thead>
+              <tbody>
+                {analysis.assets.slice(0, 40).map((asset) => (
+                  <tr key={asset.id} className="border-t border-slate-800 text-slate-200">
+                    <td className="px-3 py-2 font-mono">{asset.tagNumber || asset.id}</td>
+                    <td className="px-3 py-2">{asset.name || "Unknown"}</td>
+                    <td className="px-3 py-2">{asset.layer ? `L${asset.layer}` : "-"}</td>
+                    <td className="px-3 py-2">{asset.assetType?.replace(/_/g, " ") || "-"}</td>
+                    <td className="px-3 py-2">{asset.engineering?.processArea || "-"}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -814,10 +882,32 @@ export default function InventoryPage() {
   );
 }
 
-function MetricCard({ label, value, sub, warning }: { label: string; value: string | number; sub: string; warning?: boolean }) {
+function MetricCard({
+  label,
+  value,
+  sub,
+  warning,
+  help,
+}: {
+  label: string;
+  value: string | number;
+  sub: string;
+  warning?: boolean;
+  help?: string;
+}) {
   return (
     <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-5">
-      <div className="text-slate-400 text-sm mb-2">{label}</div>
+      <div className="mb-2 flex items-center gap-2 text-slate-400 text-sm">
+        <span>{label}</span>
+        {help && (
+          <span
+            title={help}
+            className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-slate-600 text-[10px] text-slate-400"
+          >
+            i
+          </span>
+        )}
+      </div>
       <div className={`text-3xl font-bold ${warning ? "text-yellow-400" : "text-white"}`}>{value}</div>
       <div className="text-xs text-slate-500 mt-1">{sub}</div>
     </div>

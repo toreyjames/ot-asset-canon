@@ -320,7 +320,7 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
       gaps.push({
         id: `gap-reboiler-${column.tagNumber}`,
         type: "reboiler",
-        label: "Reboiler?",
+        label: "Potential Reboiler Gap",
         description: `Column ${column.tagNumber} needs a reboiler - not documented in inventory`,
         position: [colX - 2, -0.5, colZ],
         severity: "critical"
@@ -332,7 +332,7 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
       gaps.push({
         id: `gap-reflux-${column.tagNumber}`,
         type: "reflux_drum",
-        label: "Reflux Drum?",
+        label: "Potential Reflux Drum Gap",
         description: `Column ${column.tagNumber} has condenser but no reflux drum documented`,
         position: [colX + 2, 1, colZ],
         severity: "major"
@@ -529,7 +529,7 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
     gaps.push({
       id: "gap-feed-prep",
       type: "feed_prep",
-      label: "Feed Prep?",
+      label: "Potential Feed Prep Gap",
       description: "No feed preparation equipment documented - raw materials typically need filtering, heating, or mixing before reaction",
       position: [-8, 0.5, 0],
       severity: "major"
@@ -549,7 +549,7 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
     gaps.push({
       id: "gap-catalyst",
       type: "catalyst",
-      label: "Catalyst System?",
+      label: "Potential Catalyst System Gap",
       description: "Polymerization process detected but no catalyst feed system documented",
       position: [-4, 0.5, 3],
       severity: "critical"
@@ -567,7 +567,7 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
     gaps.push({
       id: "gap-finishing",
       type: "finishing",
-      label: "Finishing?",
+      label: "Potential Finishing Gap",
       description: "Polymer product but no finishing equipment (pelletizer, dryer, bagging) documented",
       position: [xPos + 8, 0.5, 0],
       severity: "major"
@@ -586,7 +586,7 @@ function buildProcessFlow(assets: Partial<CanonAsset>[]): {
         gaps.push({
           id: `gap-pump-reflux-${column.tagNumber}`,
           type: "pump",
-          label: "Reflux Pump?",
+          label: "Potential Reflux Pump Gap",
           description: `Column ${column.tagNumber} needs reflux pump - not documented`,
           position: [colPos.position[0] + 2, -0.5, colPos.position[2] + 1.5],
           severity: "major"
