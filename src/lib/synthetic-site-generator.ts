@@ -315,20 +315,22 @@ export function generateSyntheticSiteData(options: GenerateSiteOptions): Generat
 
 export function buildCoverageBaseline(assets: Partial<CanonAsset>[]) {
   const total = assets.length;
-  const canBeSecured = assets.filter((a) => a.layer !== undefined && a.layer >= 2).length;
-  const monitored = assets.filter((a) => a.security?.monitoringCoverage === "baseline").length;
-  const patchable = assets.filter((a) => a.security?.patchable).length;
-  const covered = assets.filter((a) => {
-    const hasSecuritySignal = Boolean(a.security?.monitoringCoverage === "baseline" || (a.security?.cveCount ?? 0) >= 0);
-    return hasSecuritySignal;
-  }).length;
+  const securable = assets.filter((a) => a.layer !== undefined && a.layer >= 2);
+  const canBeSecured = securable.length;
+  const monitored = securable.filter((a) => a.security?.monitoringCoverage === "baseline").length;
+  const patchable = securable.filter((a) => a.security?.patchable).length;
+  const covered = securable.filter((a) =>
+    a.security?.monitoringCoverage === "baseline" ||
+    ((a.security?.cveCount ?? 0) > 0)
+  ).length;
+  const boundedCovered = Math.min(canBeSecured, covered);
 
   return {
     totalAssets: total,
     securableAssets: canBeSecured,
-    coveredAssets: covered,
-    uncoveredAssets: Math.max(0, canBeSecured - covered),
-    coveragePercent: canBeSecured > 0 ? Math.round((covered / canBeSecured) * 100) : 0,
+    coveredAssets: boundedCovered,
+    uncoveredAssets: Math.max(0, canBeSecured - boundedCovered),
+    coveragePercent: canBeSecured > 0 ? Math.round((boundedCovered / canBeSecured) * 100) : 0,
     discoveryCoveragePercent: total > 0 ? Math.round((assets.filter((a) => Boolean(a.sourceSystem)).length / total) * 100) : 0,
     patchVisibilityPercent: canBeSecured > 0 ? Math.round((patchable / canBeSecured) * 100) : 0,
     evidencedPercent: total > 0 ? Math.round((assets.filter((a) => a.verified).length / total) * 100) : 0,

@@ -41,7 +41,7 @@ export default function HomePage() {
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
             <Link
-              href="/ingest?demo=1"
+              href="/inventory?demo=1"
               className="rounded-md bg-cyan-400 px-6 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
             >
               Run Demo Now

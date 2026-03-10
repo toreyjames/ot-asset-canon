@@ -28,6 +28,56 @@ const PLANT_TYPE_LABELS: Record<PlantType, string> = {
 
 type ViewMode = "process" | "graph";
 type SiteProfile = "petrochemical" | "chemical" | "water" | "power";
+type DemoPresetKey = "refinery" | "chemical" | "water" | "power";
+
+const DEMO_PRESETS: {
+  key: DemoPresetKey;
+  label: string;
+  profile: SiteProfile;
+  siteName: string;
+  siteSlug: string;
+  targetAssetCount: number;
+}[] = [
+  {
+    key: "refinery",
+    label: "Refinery",
+    profile: "petrochemical",
+    siteName: "Gulf Coast Refinery",
+    siteSlug: "gulf-coast-refinery",
+    targetAssetCount: 3200,
+  },
+  {
+    key: "chemical",
+    label: "Chemical Plant",
+    profile: "chemical",
+    siteName: "Prairie Chemical Works",
+    siteSlug: "prairie-chemical-works",
+    targetAssetCount: 2800,
+  },
+  {
+    key: "water",
+    label: "Water Treatment",
+    profile: "water",
+    siteName: "Riverbend Water Facility",
+    siteSlug: "riverbend-water-facility",
+    targetAssetCount: 2400,
+  },
+  {
+    key: "power",
+    label: "Power Generation",
+    profile: "power",
+    siteName: "Summit Power Station",
+    siteSlug: "summit-power-station",
+    targetAssetCount: 2600,
+  },
+];
+
+const DEMO_STEPS = [
+  "Generating plant dataset",
+  "Building canonical inventory",
+  "Calculating security coverage",
+  "Rendering plant map",
+];
 
 interface AnalysisPayload {
   site: {
@@ -84,6 +134,11 @@ export default function InventoryPage() {
   const [autostarted, setAutostarted] = useState(false);
   const [fromIngest, setFromIngest] = useState(false);
   const [handoffMessage, setHandoffMessage] = useState<string | null>(null);
+  const [demoMode, setDemoMode] = useState(false);
+  const [demoPreset, setDemoPreset] = useState<DemoPresetKey>("refinery");
+  const [demoStepIndex, setDemoStepIndex] = useState(0);
+  const [demoRunning, setDemoRunning] = useState(false);
+  const [demoStatus, setDemoStatus] = useState<string | null>(null);
 
   const [siteName, setSiteName] = useState("Houston Plant");
   const [siteSlug, setSiteSlug] = useState("houston-plant");
@@ -116,6 +171,8 @@ export default function InventoryPage() {
       .filter((g) => g.severity === "critical")
       .slice(0, 8);
   }, [completeness]);
+
+  const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
   async function startFromIngestContext(context: IngestRunContext) {
     try {
@@ -178,9 +235,64 @@ export default function InventoryPage() {
     }
   }
 
+  async function runGuidedDemo() {
+    const preset = DEMO_PRESETS.find((p) => p.key === demoPreset) ?? DEMO_PRESETS[0];
+    try {
+      setDemoRunning(true);
+      setLoading(true);
+      setError(null);
+      setDemoStepIndex(0);
+      setDemoStatus(DEMO_STEPS[0]);
+
+      setSiteName(preset.siteName);
+      setSiteSlug(preset.siteSlug);
+      setProfile(preset.profile);
+      setTargetAssetCount(preset.targetAssetCount);
+
+      await sleep(500);
+      setDemoStepIndex(1);
+      setDemoStatus(DEMO_STEPS[1]);
+      await sleep(500);
+      setDemoStepIndex(2);
+      setDemoStatus(DEMO_STEPS[2]);
+
+      const response = await fetch("/api/analysis/start", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          siteName: preset.siteName,
+          siteSlug: preset.siteSlug,
+          profile: preset.profile,
+          targetAssetCount: preset.targetAssetCount,
+          visualizationAssetLimit: 450,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Demo analysis request failed");
+      }
+
+      setDemoStepIndex(3);
+      setDemoStatus(DEMO_STEPS[3]);
+      const payload = (await response.json()) as AnalysisPayload;
+      await sleep(400);
+      setAnalysis(payload);
+      setDemoStatus("Demo ready");
+    } catch {
+      setError("Demo run failed. Please retry.");
+      setDemoStatus(null);
+    } finally {
+      setLoading(false);
+      setDemoRunning(false);
+    }
+  }
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
+    if (params.get("demo") === "1") {
+      setDemoMode(true);
+    }
     const from = params.get("from");
     if (from !== "ingest") return;
     setFromIngest(true);
@@ -226,6 +338,69 @@ export default function InventoryPage() {
   }
 
   if (!analysis) {
+    if (demoMode && !fromIngest) {
+      return (
+        <div className="min-h-screen bg-[#0a0a0f] text-slate-100 px-4 py-10">
+          <div className="max-w-3xl mx-auto">
+            <div className="bg-slate-900/60 border border-slate-800 rounded-2xl p-8">
+              <h1 className="text-3xl font-bold text-white">Run Interactive Demo</h1>
+              <p className="mt-3 text-slate-300">
+                Choose a plant type, then watch the demo build inventory and coverage step by step.
+              </p>
+
+              <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-2">
+                {DEMO_PRESETS.map((preset) => (
+                  <button
+                    key={preset.key}
+                    type="button"
+                    onClick={() => setDemoPreset(preset.key)}
+                    className={`rounded-lg border px-3 py-2 text-sm ${
+                      demoPreset === preset.key
+                        ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                        : "border-slate-700 bg-slate-800/70 text-slate-300"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="mt-5 space-y-2">
+                {DEMO_STEPS.map((step, idx) => {
+                  const state =
+                    demoRunning || loading
+                      ? idx < demoStepIndex
+                        ? "done"
+                        : idx === demoStepIndex
+                        ? "active"
+                        : "pending"
+                      : "pending";
+                  return <AgentStep key={step} index={idx + 1} label={step} state={state} />;
+                })}
+              </div>
+
+              {demoStatus && (
+                <div className="mt-4 rounded-md border border-slate-700 bg-slate-800/70 px-3 py-2 text-sm text-slate-200">
+                  {demoStatus}
+                </div>
+              )}
+              {error && <div className="mt-4 text-red-400 text-sm">{error}</div>}
+
+              <div className="mt-6">
+                <button
+                  onClick={runGuidedDemo}
+                  disabled={demoRunning || loading}
+                  className="px-5 py-2.5 rounded bg-cyan-400 hover:bg-cyan-300 disabled:opacity-60 text-slate-950 font-semibold"
+                >
+                  {demoRunning || loading ? "Running Demo..." : "Run Demo"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="min-h-screen bg-[#0a0a0f] text-slate-100 px-4 py-10">
         <div className="max-w-4xl mx-auto">
@@ -574,6 +749,30 @@ function MetricCard({ label, value, sub, warning }: { label: string; value: stri
       <div className="text-slate-400 text-sm mb-2">{label}</div>
       <div className={`text-3xl font-bold ${warning ? "text-yellow-400" : "text-white"}`}>{value}</div>
       <div className="text-xs text-slate-500 mt-1">{sub}</div>
+    </div>
+  );
+}
+
+function AgentStep({
+  index,
+  label,
+  state,
+}: {
+  index: number;
+  label: string;
+  state: "done" | "active" | "pending";
+}) {
+  const tone =
+    state === "done"
+      ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-200"
+      : state === "active"
+      ? "border-cyan-500/50 bg-cyan-500/10 text-cyan-200"
+      : "border-slate-700 bg-slate-950 text-slate-400";
+
+  return (
+    <div className={`rounded-md border px-3 py-2 text-sm ${tone}`}>
+      <span className="mr-2 text-xs uppercase tracking-wide">{index}</span>
+      {label}
     </div>
   );
 }
