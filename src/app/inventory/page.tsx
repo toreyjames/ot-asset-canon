@@ -6,6 +6,7 @@ import RelationshipGraph from "@/components/canon/RelationshipGraph";
 import PlantReconstructionPanel from "@/components/canon/PlantReconstruction";
 import { LAYER_NAMES, type CanonAsset, type CanonLayer } from "@/types/canon";
 import type { CompletenessResult, GapAnalysis, PlantType } from "@/lib/inventory-completeness";
+import type { SiteProfile } from "@/lib/synthetic-site-generator";
 
 const Plant3DView = lazy(() => import("@/components/canon/Plant3DView"));
 
@@ -27,8 +28,14 @@ const PLANT_TYPE_LABELS: Record<PlantType, string> = {
 };
 
 type ViewMode = "process" | "graph";
-type SiteProfile = "petrochemical" | "chemical" | "water" | "power";
-type DemoPresetKey = "refinery" | "chemical" | "water" | "power";
+type DemoPresetKey =
+  | "refinery"
+  | "chemical"
+  | "water"
+  | "power"
+  | "automotive"
+  | "defense_manufacturing"
+  | "shipbuilding";
 
 const DEMO_PRESETS: {
   key: DemoPresetKey;
@@ -69,6 +76,30 @@ const DEMO_PRESETS: {
     siteName: "Summit Power Station",
     siteSlug: "summit-power-station",
     targetAssetCount: 2600,
+  },
+  {
+    key: "automotive",
+    label: "Automotive",
+    profile: "automotive",
+    siteName: "Midwest Auto Assembly",
+    siteSlug: "midwest-auto-assembly",
+    targetAssetCount: 3000,
+  },
+  {
+    key: "defense_manufacturing",
+    label: "Defense Manufacturing",
+    profile: "defense_manufacturing",
+    siteName: "Patriot Defense Works",
+    siteSlug: "patriot-defense-works",
+    targetAssetCount: 2800,
+  },
+  {
+    key: "shipbuilding",
+    label: "Shipbuilding",
+    profile: "shipbuilding",
+    siteName: "Atlantic Shipyard",
+    siteSlug: "atlantic-shipyard",
+    targetAssetCount: 3400,
   },
 ];
 
@@ -118,9 +149,20 @@ interface IngestRunContext {
 
 function normalizeProfile(input: string | null): SiteProfile {
   if (!input) return "petrochemical";
-  if (input === "petrochemical" || input === "chemical" || input === "water" || input === "power") {
+  if (
+    input === "petrochemical" ||
+    input === "chemical" ||
+    input === "water" ||
+    input === "power" ||
+    input === "automotive" ||
+    input === "defense_manufacturing" ||
+    input === "shipbuilding"
+  ) {
     return input;
   }
+  if (input.includes("auto")) return "automotive";
+  if (input.includes("defense")) return "defense_manufacturing";
+  if (input.includes("ship")) return "shipbuilding";
   if (input.includes("water")) return "water";
   if (input.includes("power")) return "power";
   if (input.includes("refinery")) return "petrochemical";
@@ -174,10 +216,16 @@ export default function InventoryPage() {
 
   const totalAssets = analysis?.dataset.totalAssets ?? 0;
   const discoveredCount = analysis
-    ? Math.round((analysis.coverageBaseline.discoveryCoveragePercent / 100) * totalAssets)
+    ? Math.min(
+        totalAssets,
+        Math.round((analysis.coverageBaseline.discoveryCoveragePercent / 100) * totalAssets)
+      )
     : 0;
   const evidenceBackedCount = analysis
-    ? Math.round((analysis.coverageBaseline.evidencedPercent / 100) * totalAssets)
+    ? Math.min(
+        totalAssets,
+        Math.round((analysis.coverageBaseline.evidencedPercent / 100) * totalAssets)
+      )
     : 0;
 
   const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -474,6 +522,9 @@ export default function InventoryPage() {
                   <option value="chemical">Chemical</option>
                   <option value="water">Water Treatment</option>
                   <option value="power">Power Generation</option>
+                  <option value="automotive">Automotive</option>
+                  <option value="defense_manufacturing">Defense Manufacturing</option>
+                  <option value="shipbuilding">Shipbuilding</option>
                 </select>
               </label>
               <label className="text-sm">
