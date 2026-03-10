@@ -6,6 +6,10 @@ Iterative product refinement from multiple customer angles, with each pass answe
 2. What still blocks value?
 3. What should be fixed next?
 
+## Alignment Guardrail
+- Before each iteration, enforce: `docs/PLANTTRACE_ANTI_DRIFT_PROMPT.md`.
+- If a proposed feature conflicts with that file, reject or defer it.
+
 ## Current State (March 10, 2026)
 - Demo flow: homepage -> inventory demo launcher -> guided run -> live map/list.
 - Inventory UI now prioritizes:
