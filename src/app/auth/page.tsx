@@ -19,6 +19,19 @@ export default function AuthPage() {
           Demo viewing is public. Sign in to save runs, export results, and keep site history.
         </p>
 
+        <div className="mt-5 space-y-2">
+          <button
+            type="button"
+            disabled
+            className="w-full rounded-md border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-400 disabled:opacity-80"
+          >
+            Continue with Microsoft (Workplace) - Coming Soon
+          </button>
+          <div className="text-[11px] text-slate-500">
+            Recommended for enterprise teams using Microsoft 365 and Entra ID.
+          </div>
+        </div>
+
         <div className="mt-5 grid grid-cols-2 rounded-md border border-slate-700 bg-slate-950 p-1 text-sm">
           <button
             type="button"
@@ -88,4 +101,3 @@ function Field({
     </label>
   );
 }
-
