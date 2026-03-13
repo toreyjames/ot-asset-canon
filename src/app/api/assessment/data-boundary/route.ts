@@ -81,6 +81,19 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error("Failed to update data-boundary setting", error);
-    return NextResponse.json({ error: "Failed to update data-boundary setting" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unknown error";
+    const missingDbUrl =
+      message.includes("Database URL is not set") ||
+      message.includes("DATABASE_URL environment variable is not set");
+    return NextResponse.json(
+      {
+        error: missingDbUrl
+          ? "Database connection is not configured in this environment"
+          : "Failed to update data-boundary setting",
+        code: missingDbUrl ? "DB_URL_MISSING" : "DATA_BOUNDARY_WRITE_FAILED",
+        detail: message,
+      },
+      { status: missingDbUrl ? 503 : 500 }
+    );
   }
 }

@@ -27,6 +27,7 @@ interface IngestionResult {
   storageMode?: "metadata_only" | "hosted_raw_pilot";
   dataBoundaryMode?: "customer_agent" | "customer_cloud" | "hosted_pilot";
   orgSlug?: string | null;
+  code?: string;
 }
 
 export async function POST(request: Request) {
@@ -194,7 +195,14 @@ async function processIngestion(
     return NextResponse.json(result);
   } catch (error) {
     result.status = "failed";
-    result.errors.push(`Ingestion failed: ${error}`);
+    const message = error instanceof Error ? error.message : String(error);
+    result.errors.push(`Ingestion failed: ${message}`);
+    if (
+      message.includes("Database URL is not set") ||
+      message.includes("DATABASE_URL environment variable is not set")
+    ) {
+      result.code = "DB_URL_MISSING";
+    }
 
     // Update job as failed
     try {
@@ -210,7 +218,7 @@ async function processIngestion(
       // DB not configured
     }
 
-    return NextResponse.json(result, { status: 500 });
+    return NextResponse.json(result, { status: result.code === "DB_URL_MISSING" ? 503 : 500 });
   }
 }
 
