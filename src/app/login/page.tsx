@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function LoginPage() {
-  redirect("/auth?returnTo=/industrial-tracker/coverage");
+  redirect("/auth?returnTo=/onboarding");
 }

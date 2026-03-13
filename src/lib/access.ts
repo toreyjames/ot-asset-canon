@@ -10,7 +10,16 @@ export interface AccessState {
   email?: string;
 }
 
+export interface OnboardingState {
+  completed: boolean;
+  company?: string;
+  industry?: string;
+  objective?: "mission_map" | "industry_tracker";
+  privacyMode?: "private_by_default" | "shared_demo";
+}
+
 const ACCESS_KEY = "planttrace:access";
+const ONBOARDING_KEY = "baseload:onboarding";
 
 export function getAccessState(): AccessState {
   if (typeof window === "undefined") {
@@ -38,3 +47,22 @@ export function clearAccessState() {
   window.localStorage.removeItem(ACCESS_KEY);
 }
 
+export function getOnboardingState(): OnboardingState {
+  if (typeof window === "undefined") {
+    return { completed: false };
+  }
+
+  try {
+    const raw = window.localStorage.getItem(ONBOARDING_KEY);
+    if (!raw) return { completed: false };
+    const parsed = JSON.parse(raw) as OnboardingState;
+    return parsed?.completed ? parsed : { completed: false };
+  } catch {
+    return { completed: false };
+  }
+}
+
+export function setOnboardingState(next: OnboardingState) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(ONBOARDING_KEY, JSON.stringify(next));
+}
