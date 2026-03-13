@@ -8,10 +8,14 @@ let _sql: NeonQueryFunction<false, false> | null = null;
 
 function getDb(): NeonHttpDatabase<typeof schema> {
   if (!_db) {
-    const databaseUrl = process.env.DATABASE_URL;
+    const databaseUrl =
+      process.env.DATABASE_URL ||
+      process.env.POSTGRES_URL ||
+      process.env.POSTGRES_PRISMA_URL ||
+      process.env.POSTGRES_URL_NON_POOLING;
     if (!databaseUrl) {
       throw new Error(
-        "DATABASE_URL environment variable is not set. Please configure your Neon database connection."
+        "Database URL is not set. Configure DATABASE_URL or Vercel Postgres variables."
       );
     }
     _sql = neon(databaseUrl);
