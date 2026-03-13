@@ -189,6 +189,23 @@ export const clients = pgTable("clients", {
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
+export const clientDataBoundarySettings = pgTable(
+  "client_data_boundary_settings",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id")
+      .notNull()
+      .references(() => clients.id, { onDelete: "cascade" }),
+    mode: varchar("mode", { length: 32 }).notNull().default("customer_agent"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    clientUniqueIdx: uniqueIndex("client_data_boundary_client_idx").on(table.clientId),
+    modeIdx: index("client_data_boundary_mode_idx").on(table.mode),
+  })
+);
+
 // Site within a client (e.g., "Houston Plant")
 export const sites = pgTable(
   "sites",
@@ -514,6 +531,482 @@ export const ingestionJobs = pgTable(
 );
 
 // ============================================
+// INDUSTRIAL OPPORTUNITY TRACKER
+// ============================================
+
+export const geoDim = pgTable(
+  "geo_dim",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    countyFips: varchar("county_fips", { length: 5 }),
+    stateFips: varchar("state_fips", { length: 2 }),
+    cbsaCode: varchar("cbsa_code", { length: 5 }),
+    stateCode: varchar("state_code", { length: 2 }),
+    countyName: varchar("county_name", { length: 255 }),
+    cbsaName: varchar("cbsa_name", { length: 255 }),
+    geometryRef: text("geometry_ref"),
+    population: integer("population"),
+    manufacturingEmployment: integer("manufacturing_employment"),
+    establishmentCount: integer("establishment_count"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    countyIdx: uniqueIndex("geo_county_fips_idx").on(table.countyFips),
+    cbsaIdx: index("geo_cbsa_idx").on(table.cbsaCode),
+    stateIdx: index("geo_state_idx").on(table.stateFips),
+  })
+);
+
+export const taxonomyDim = pgTable(
+  "taxonomy_dim",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    taxonomyType: varchar("taxonomy_type", { length: 50 }).notNull(), // naics, tech_tag, equipment_group, permit_group
+    code: varchar("code", { length: 100 }).notNull(),
+    parentCode: varchar("parent_code", { length: 100 }),
+    name: varchar("name", { length: 255 }).notNull(),
+    description: text("description"),
+    hierarchyLevel: integer("hierarchy_level"),
+    synonyms: jsonb("synonyms").$type<string[]>(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    taxonomyTypeCodeIdx: uniqueIndex("taxonomy_type_code_idx").on(
+      table.taxonomyType,
+      table.code
+    ),
+    taxonomyParentIdx: index("taxonomy_parent_idx").on(table.parentCode),
+  })
+);
+
+export const entityMaster = pgTable(
+  "entity_master",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    legalName: varchar("legal_name", { length: 255 }).notNull(),
+    normalizedName: varchar("normalized_name", { length: 255 }).notNull(),
+    entityType: varchar("entity_type", { length: 50 }).notNull(), // company, agency, recipient, provider, issuer
+    country: varchar("country", { length: 2 }).default("US"),
+    websiteDomain: varchar("website_domain", { length: 255 }),
+    identifiers: jsonb("identifiers")
+      .$type<{
+        uei?: string;
+        cik?: string;
+        frsId?: string;
+        eiaPlantCode?: string;
+        tickers?: string[];
+        [key: string]: string | string[] | undefined;
+      }>()
+      .notNull()
+      .default({}),
+    aliases: jsonb("aliases").$type<string[]>().notNull().default([]),
+    address: jsonb("address").$type<{
+      street1?: string;
+      street2?: string;
+      city?: string;
+      state?: string;
+      postalCode?: string;
+      countyFips?: string;
+      country?: string;
+    }>(),
+    confidenceScore: integer("confidence_score").default(0),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    normalizedNameIdx: index("entity_normalized_name_idx").on(table.normalizedName),
+    entityTypeIdx: index("entity_type_idx").on(table.entityType),
+    websiteDomainIdx: index("entity_website_domain_idx").on(table.websiteDomain),
+  })
+);
+
+export const facilityMaster = pgTable(
+  "facility_master",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    entityId: uuid("entity_id").references(() => entityMaster.id, {
+      onDelete: "set null",
+    }),
+    geoId: uuid("geo_id").references(() => geoDim.id, { onDelete: "set null" }),
+    facilityName: varchar("facility_name", { length: 255 }).notNull(),
+    normalizedName: varchar("normalized_name", { length: 255 }).notNull(),
+    address: jsonb("address")
+      .$type<{
+        street1?: string;
+        street2?: string;
+        city?: string;
+        state?: string;
+        postalCode?: string;
+        countyFips?: string;
+      }>()
+      .notNull()
+      .default({}),
+    latitude: decimal("latitude", { precision: 10, scale: 6 }),
+    longitude: decimal("longitude", { precision: 10, scale: 6 }),
+    countyFips: varchar("county_fips", { length: 5 }),
+    cbsaCode: varchar("cbsa_code", { length: 5 }),
+    facilitySourceIds: jsonb("facility_source_ids")
+      .$type<{
+        frsId?: string;
+        eiaPlantCode?: string;
+        npdesId?: string;
+        rcraId?: string;
+        samUei?: string;
+        [key: string]: string | undefined;
+      }>()
+      .notNull()
+      .default({}),
+    confidenceScore: integer("confidence_score").default(0),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    facilityEntityIdx: index("facility_entity_idx").on(table.entityId),
+    facilityGeoIdx: index("facility_geo_idx").on(table.geoId),
+    facilityCountyIdx: index("facility_county_idx").on(table.countyFips),
+    facilityCbsaIdx: index("facility_cbsa_idx").on(table.cbsaCode),
+    facilityNameIdx: index("facility_normalized_name_idx").on(table.normalizedName),
+  })
+);
+
+export const sourceRecords = pgTable(
+  "source_records",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceSystem: varchar("source_system", { length: 100 }).notNull(),
+    sourceRecordId: varchar("source_record_id", { length: 255 }).notNull(),
+    sourceCategory: varchar("source_category", { length: 50 }).notNull(), // federal_award, opportunity, incentive, permit, energy, trade, filing, news
+    sourceUrl: text("source_url"),
+    sourceHash: varchar("source_hash", { length: 128 }),
+    fetchedAt: timestamp("fetched_at").defaultNow().notNull(),
+    effectiveDate: timestamp("effective_date"),
+    rawPayload: jsonb("raw_payload").$type<Record<string, unknown>>().notNull(),
+    extractionVersion: varchar("extraction_version", { length: 50 }),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    sourceSystemRecordIdx: uniqueIndex("source_system_record_idx").on(
+      table.sourceSystem,
+      table.sourceRecordId
+    ),
+    sourceCategoryIdx: index("source_category_idx").on(table.sourceCategory),
+  })
+);
+
+export const investmentEvents = pgTable(
+  "investment_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceRecordId: uuid("source_record_id")
+      .notNull()
+      .references(() => sourceRecords.id, { onDelete: "cascade" }),
+    providerEntityId: uuid("provider_entity_id").references(() => entityMaster.id, {
+      onDelete: "set null",
+    }),
+    recipientEntityId: uuid("recipient_entity_id").references(() => entityMaster.id, {
+      onDelete: "set null",
+    }),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "set null",
+    }),
+    geoId: uuid("geo_id").references(() => geoDim.id, { onDelete: "set null" }),
+    taxonomyId: uuid("taxonomy_id").references(() => taxonomyDim.id, {
+      onDelete: "set null",
+    }),
+    eventType: varchar("event_type", { length: 50 }).notNull(), // federal_award, incentive_award, financing_commitment, capex_announcement
+    amount: decimal("amount", { precision: 18, scale: 2 }),
+    amountType: varchar("amount_type", { length: 30 }).notNull(), // obligation, outlay, commitment, estimate
+    currency: varchar("currency", { length: 3 }).notNull().default("USD"),
+    announcedDate: timestamp("announced_date"),
+    actionDate: timestamp("action_date"),
+    startDate: timestamp("start_date"),
+    endDate: timestamp("end_date"),
+    providerName: varchar("provider_name", { length: 255 }),
+    recipientName: varchar("recipient_name", { length: 255 }),
+    programName: varchar("program_name", { length: 255 }),
+    awardType: varchar("award_type", { length: 100 }),
+    sectorNaics: varchar("sector_naics", { length: 6 }),
+    pscCode: varchar("psc_code", { length: 10 }),
+    techTags: jsonb("tech_tags").$type<string[]>().notNull().default([]),
+    jobsEstimate: integer("jobs_estimate"),
+    capexEstimate: decimal("capex_estimate", { precision: 18, scale: 2 }),
+    countyFips: varchar("county_fips", { length: 5 }),
+    cbsaCode: varchar("cbsa_code", { length: 5 }),
+    placeOfPerformance: jsonb("place_of_performance").$type<Record<string, unknown>>(),
+    recipientLocation: jsonb("recipient_location").$type<Record<string, unknown>>(),
+    confidenceScore: integer("confidence_score").default(0),
+    provenance: jsonb("provenance")
+      .$type<{
+        matchedEntityStrategy?: string;
+        matchedFacilityStrategy?: string;
+        notes?: string[];
+      }>()
+      .default({}),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    investmentSourceIdx: index("investment_source_idx").on(table.sourceRecordId),
+    investmentEventTypeIdx: index("investment_event_type_idx").on(table.eventType),
+    investmentAmountTypeIdx: index("investment_amount_type_idx").on(table.amountType),
+    investmentActionDateIdx: index("investment_action_date_idx").on(table.actionDate),
+    investmentCountyIdx: index("investment_county_idx").on(table.countyFips),
+    investmentCbsaIdx: index("investment_cbsa_idx").on(table.cbsaCode),
+    investmentNaicsIdx: index("investment_naics_idx").on(table.sectorNaics),
+  })
+);
+
+export const permitOrMilestoneEvents = pgTable(
+  "permit_or_milestone_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceRecordId: uuid("source_record_id")
+      .notNull()
+      .references(() => sourceRecords.id, { onDelete: "cascade" }),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "set null",
+    }),
+    geoId: uuid("geo_id").references(() => geoDim.id, { onDelete: "set null" }),
+    responsibleEntityId: uuid("responsible_entity_id").references(() => entityMaster.id, {
+      onDelete: "set null",
+    }),
+    permitOrProjectId: varchar("permit_or_project_id", { length: 255 }),
+    eventType: varchar("event_type", { length: 50 }).notNull(), // filed, issued, updated, milestone, closed
+    eventDate: timestamp("event_date").notNull(),
+    responsibleAgency: varchar("responsible_agency", { length: 255 }),
+    permitProgram: varchar("permit_program", { length: 100 }),
+    status: varchar("status", { length: 50 }),
+    countyFips: varchar("county_fips", { length: 5 }),
+    cbsaCode: varchar("cbsa_code", { length: 5 }),
+    notes: text("notes"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    confidenceScore: integer("confidence_score").default(0),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    permitSourceIdx: index("permit_source_idx").on(table.sourceRecordId),
+    permitEventDateIdx: index("permit_event_date_idx").on(table.eventDate),
+    permitProgramIdx: index("permit_program_idx").on(table.permitProgram),
+    permitCountyIdx: index("permit_county_idx").on(table.countyFips),
+    permitCbsaIdx: index("permit_cbsa_idx").on(table.cbsaCode),
+  })
+);
+
+export const entityResolutionDecisions = pgTable(
+  "entity_resolution_decisions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceRecordId: uuid("source_record_id")
+      .notNull()
+      .references(() => sourceRecords.id, { onDelete: "cascade" }),
+    entityId: uuid("entity_id").references(() => entityMaster.id, {
+      onDelete: "cascade",
+    }),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "cascade",
+    }),
+    decisionType: varchar("decision_type", { length: 30 }).notNull(), // deterministic, composite, probabilistic, manual
+    score: decimal("score", { precision: 5, scale: 4 }).notNull(),
+    features: jsonb("features")
+      .$type<{
+        exactIdentifiers?: string[];
+        nameSimilarity?: number;
+        addressMatch?: number;
+        domainMatch?: boolean;
+        geoDistanceKm?: number;
+        sectorAlignment?: boolean;
+      }>()
+      .notNull()
+      .default({}),
+    candidateSet: jsonb("candidate_set").$type<string[]>().notNull().default([]),
+    chosen: boolean("chosen").default(false).notNull(),
+    rationale: text("rationale"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    resolutionSourceIdx: index("resolution_source_idx").on(table.sourceRecordId),
+    resolutionEntityIdx: index("resolution_entity_idx").on(table.entityId),
+    resolutionFacilityIdx: index("resolution_facility_idx").on(table.facilityId),
+  })
+);
+
+// ============================================
+// BASELOAD EVIDENCE GRAPH
+// ============================================
+
+export const industrialProjects = pgTable(
+  "industrial_projects",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "set null",
+    }),
+    companyId: uuid("company_id").references(() => entityMaster.id, {
+      onDelete: "set null",
+    }),
+    geoId: uuid("geo_id").references(() => geoDim.id, { onDelete: "set null" }),
+    projectType: varchar("project_type", { length: 100 }).notNull(),
+    sector: varchar("sector", { length: 100 }),
+    investmentAmount: decimal("investment_amount", { precision: 18, scale: 2 }),
+    announcementDate: timestamp("announcement_date"),
+    constructionStart: timestamp("construction_start"),
+    completionEstimate: timestamp("completion_estimate"),
+    status: varchar("status", { length: 50 }).notNull().default("observed"),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    projectFacilityIdx: index("project_facility_idx").on(table.facilityId),
+    projectCompanyIdx: index("project_company_idx").on(table.companyId),
+    projectStatusIdx: index("project_status_idx").on(table.status),
+  })
+);
+
+export const evidenceRecords = pgTable(
+  "evidence_records",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    sourceRecordId: uuid("source_record_id").references(() => sourceRecords.id, {
+      onDelete: "set null",
+    }),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "set null",
+    }),
+    companyId: uuid("company_id").references(() => entityMaster.id, {
+      onDelete: "set null",
+    }),
+    geoId: uuid("geo_id").references(() => geoDim.id, { onDelete: "set null" }),
+    projectId: uuid("project_id").references(() => industrialProjects.id, {
+      onDelete: "set null",
+    }),
+    sourceName: varchar("source_name", { length: 255 }).notNull(),
+    dataset: varchar("dataset", { length: 255 }).notNull(),
+    evidenceType: varchar("evidence_type", { length: 100 }).notNull(),
+    sourceUrl: text("source_url"),
+    confidenceScore: integer("confidence_score").default(0),
+    observedAt: timestamp("observed_at").notNull(),
+    rawPayload: jsonb("raw_payload").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    evidenceFacilityIdx: index("evidence_facility_idx").on(table.facilityId),
+    evidenceCompanyIdx: index("evidence_company_idx").on(table.companyId),
+    evidenceDatasetIdx: index("evidence_dataset_idx").on(table.dataset),
+    evidenceObservedIdx: index("evidence_observed_idx").on(table.observedAt),
+  })
+);
+
+export const programLinks = pgTable(
+  "program_links",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    facilityId: uuid("facility_id")
+      .notNull()
+      .references(() => facilityMaster.id, { onDelete: "cascade" }),
+    programType: varchar("program_type", { length: 100 }).notNull(),
+    externalProgramId: varchar("external_program_id", { length: 255 }).notNull(),
+    agency: varchar("agency", { length: 255 }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    programFacilityIdx: index("program_facility_idx").on(table.facilityId),
+    programTypeIdx: index("program_type_idx").on(table.programType),
+    programUniqueIdx: uniqueIndex("program_facility_external_idx").on(
+      table.facilityId,
+      table.programType,
+      table.externalProgramId
+    ),
+  })
+);
+
+export const derivedSignals = pgTable(
+  "derived_signals",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "set null",
+    }),
+    companyId: uuid("company_id").references(() => entityMaster.id, {
+      onDelete: "set null",
+    }),
+    geoId: uuid("geo_id").references(() => geoDim.id, { onDelete: "set null" }),
+    projectId: uuid("project_id").references(() => industrialProjects.id, {
+      onDelete: "set null",
+    }),
+    signalType: varchar("signal_type", { length: 100 }).notNull(),
+    value: varchar("value", { length: 255 }),
+    unit: varchar("unit", { length: 50 }),
+    evidenceId: uuid("evidence_id").references(() => evidenceRecords.id, {
+      onDelete: "set null",
+    }),
+    observedAt: timestamp("observed_at").notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    signalFacilityIdx: index("signal_facility_idx").on(table.facilityId),
+    signalTypeIdx: index("signal_type_idx").on(table.signalType),
+    signalObservedIdx: index("signal_observed_idx").on(table.observedAt),
+  })
+);
+
+export const facilityEvents = pgTable(
+  "facility_events",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "set null",
+    }),
+    eventType: varchar("event_type", { length: 100 }).notNull(),
+    occurredAt: timestamp("occurred_at").notNull(),
+    signalId: uuid("signal_id").references(() => derivedSignals.id, {
+      onDelete: "set null",
+    }),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    facilityEventFacilityIdx: index("facility_event_facility_idx").on(table.facilityId),
+    facilityEventTypeIdx: index("facility_event_type_idx").on(table.eventType),
+    facilityEventOccurredIdx: index("facility_event_occurred_idx").on(table.occurredAt),
+  })
+);
+
+export const modelHypotheses = pgTable(
+  "model_hypotheses",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    facilityId: uuid("facility_id").references(() => facilityMaster.id, {
+      onDelete: "set null",
+    }),
+    projectId: uuid("project_id").references(() => industrialProjects.id, {
+      onDelete: "set null",
+    }),
+    hypothesisType: varchar("hypothesis_type", { length: 100 }).notNull(),
+    value: varchar("value", { length: 255 }),
+    confidenceScore: integer("confidence_score").default(0),
+    evidenceIds: jsonb("evidence_ids").$type<string[]>().notNull().default([]),
+    modelVersion: varchar("model_version", { length: 100 }),
+    generatedAt: timestamp("generated_at").defaultNow().notNull(),
+    metadata: jsonb("metadata").$type<Record<string, unknown>>(),
+  },
+  (table) => ({
+    hypothesisFacilityIdx: index("hypothesis_facility_idx").on(table.facilityId),
+    hypothesisTypeIdx: index("hypothesis_type_idx").on(table.hypothesisType),
+  })
+);
+
+// ============================================
 // RELATIONS
 // ============================================
 
@@ -560,7 +1053,18 @@ export const assetRelationshipsRelations = relations(
 
 export const clientsRelations = relations(clients, ({ many }) => ({
   sites: many(sites),
+  dataBoundarySettings: many(clientDataBoundarySettings),
 }));
+
+export const clientDataBoundarySettingsRelations = relations(
+  clientDataBoundarySettings,
+  ({ one }) => ({
+    client: one(clients, {
+      fields: [clientDataBoundarySettings.clientId],
+      references: [clients.id],
+    }),
+  })
+);
 
 export const sitesRelations = relations(sites, ({ one, many }) => ({
   client: one(clients, {
@@ -616,6 +1120,228 @@ export const assetConfirmationsRelations = relations(assetConfirmations, ({ one 
   dataSource: one(dataSources, {
     fields: [assetConfirmations.dataSourceId],
     references: [dataSources.id],
+  }),
+}));
+
+export const geoDimRelations = relations(geoDim, ({ many }) => ({
+  facilities: many(facilityMaster),
+  investmentEvents: many(investmentEvents),
+  permitOrMilestoneEvents: many(permitOrMilestoneEvents),
+  industrialProjects: many(industrialProjects),
+  evidenceRecords: many(evidenceRecords),
+  derivedSignals: many(derivedSignals),
+}));
+
+export const taxonomyDimRelations = relations(taxonomyDim, ({ many }) => ({
+  investmentEvents: many(investmentEvents),
+}));
+
+export const entityMasterRelations = relations(entityMaster, ({ many }) => ({
+  facilities: many(facilityMaster),
+  providedInvestmentEvents: many(investmentEvents, {
+    relationName: "providerEntity",
+  }),
+  receivedInvestmentEvents: many(investmentEvents, {
+    relationName: "recipientEntity",
+  }),
+  permitResponsibilities: many(permitOrMilestoneEvents),
+  resolutionDecisions: many(entityResolutionDecisions),
+  industrialProjects: many(industrialProjects),
+  evidenceRecords: many(evidenceRecords),
+  derivedSignals: many(derivedSignals),
+}));
+
+export const facilityMasterRelations = relations(facilityMaster, ({ one, many }) => ({
+  entity: one(entityMaster, {
+    fields: [facilityMaster.entityId],
+    references: [entityMaster.id],
+  }),
+  geo: one(geoDim, {
+    fields: [facilityMaster.geoId],
+    references: [geoDim.id],
+  }),
+  investmentEvents: many(investmentEvents),
+  permitOrMilestoneEvents: many(permitOrMilestoneEvents),
+  resolutionDecisions: many(entityResolutionDecisions),
+  industrialProjects: many(industrialProjects),
+  evidenceRecords: many(evidenceRecords),
+  programLinks: many(programLinks),
+  derivedSignals: many(derivedSignals),
+  facilityEvents: many(facilityEvents),
+  modelHypotheses: many(modelHypotheses),
+}));
+
+export const sourceRecordsRelations = relations(sourceRecords, ({ many }) => ({
+  investmentEvents: many(investmentEvents),
+  permitOrMilestoneEvents: many(permitOrMilestoneEvents),
+  resolutionDecisions: many(entityResolutionDecisions),
+  evidenceRecords: many(evidenceRecords),
+}));
+
+export const investmentEventsRelations = relations(investmentEvents, ({ one }) => ({
+  sourceRecord: one(sourceRecords, {
+    fields: [investmentEvents.sourceRecordId],
+    references: [sourceRecords.id],
+  }),
+  providerEntity: one(entityMaster, {
+    fields: [investmentEvents.providerEntityId],
+    references: [entityMaster.id],
+    relationName: "providerEntity",
+  }),
+  recipientEntity: one(entityMaster, {
+    fields: [investmentEvents.recipientEntityId],
+    references: [entityMaster.id],
+    relationName: "recipientEntity",
+  }),
+  facility: one(facilityMaster, {
+    fields: [investmentEvents.facilityId],
+    references: [facilityMaster.id],
+  }),
+  geo: one(geoDim, {
+    fields: [investmentEvents.geoId],
+    references: [geoDim.id],
+  }),
+  taxonomy: one(taxonomyDim, {
+    fields: [investmentEvents.taxonomyId],
+    references: [taxonomyDim.id],
+  }),
+}));
+
+export const permitOrMilestoneEventsRelations = relations(
+  permitOrMilestoneEvents,
+  ({ one }) => ({
+    sourceRecord: one(sourceRecords, {
+      fields: [permitOrMilestoneEvents.sourceRecordId],
+      references: [sourceRecords.id],
+    }),
+    facility: one(facilityMaster, {
+      fields: [permitOrMilestoneEvents.facilityId],
+      references: [facilityMaster.id],
+    }),
+    geo: one(geoDim, {
+      fields: [permitOrMilestoneEvents.geoId],
+      references: [geoDim.id],
+    }),
+    responsibleEntity: one(entityMaster, {
+      fields: [permitOrMilestoneEvents.responsibleEntityId],
+      references: [entityMaster.id],
+    }),
+  })
+);
+
+export const entityResolutionDecisionsRelations = relations(
+  entityResolutionDecisions,
+  ({ one }) => ({
+    sourceRecord: one(sourceRecords, {
+      fields: [entityResolutionDecisions.sourceRecordId],
+      references: [sourceRecords.id],
+    }),
+    entity: one(entityMaster, {
+      fields: [entityResolutionDecisions.entityId],
+      references: [entityMaster.id],
+    }),
+    facility: one(facilityMaster, {
+      fields: [entityResolutionDecisions.facilityId],
+      references: [facilityMaster.id],
+    }),
+  })
+);
+
+export const industrialProjectsRelations = relations(
+  industrialProjects,
+  ({ one, many }) => ({
+    facility: one(facilityMaster, {
+      fields: [industrialProjects.facilityId],
+      references: [facilityMaster.id],
+    }),
+    company: one(entityMaster, {
+      fields: [industrialProjects.companyId],
+      references: [entityMaster.id],
+    }),
+    geo: one(geoDim, {
+      fields: [industrialProjects.geoId],
+      references: [geoDim.id],
+    }),
+    evidenceRecords: many(evidenceRecords),
+    derivedSignals: many(derivedSignals),
+    modelHypotheses: many(modelHypotheses),
+  })
+);
+
+export const evidenceRecordsRelations = relations(evidenceRecords, ({ one, many }) => ({
+  sourceRecord: one(sourceRecords, {
+    fields: [evidenceRecords.sourceRecordId],
+    references: [sourceRecords.id],
+  }),
+  facility: one(facilityMaster, {
+    fields: [evidenceRecords.facilityId],
+    references: [facilityMaster.id],
+  }),
+  company: one(entityMaster, {
+    fields: [evidenceRecords.companyId],
+    references: [entityMaster.id],
+  }),
+  geo: one(geoDim, {
+    fields: [evidenceRecords.geoId],
+    references: [geoDim.id],
+  }),
+  project: one(industrialProjects, {
+    fields: [evidenceRecords.projectId],
+    references: [industrialProjects.id],
+  }),
+  derivedSignals: many(derivedSignals),
+}));
+
+export const programLinksRelations = relations(programLinks, ({ one }) => ({
+  facility: one(facilityMaster, {
+    fields: [programLinks.facilityId],
+    references: [facilityMaster.id],
+  }),
+}));
+
+export const derivedSignalsRelations = relations(derivedSignals, ({ one, many }) => ({
+  facility: one(facilityMaster, {
+    fields: [derivedSignals.facilityId],
+    references: [facilityMaster.id],
+  }),
+  company: one(entityMaster, {
+    fields: [derivedSignals.companyId],
+    references: [entityMaster.id],
+  }),
+  geo: one(geoDim, {
+    fields: [derivedSignals.geoId],
+    references: [geoDim.id],
+  }),
+  project: one(industrialProjects, {
+    fields: [derivedSignals.projectId],
+    references: [industrialProjects.id],
+  }),
+  evidence: one(evidenceRecords, {
+    fields: [derivedSignals.evidenceId],
+    references: [evidenceRecords.id],
+  }),
+  facilityEvents: many(facilityEvents),
+}));
+
+export const facilityEventsRelations = relations(facilityEvents, ({ one }) => ({
+  facility: one(facilityMaster, {
+    fields: [facilityEvents.facilityId],
+    references: [facilityMaster.id],
+  }),
+  signal: one(derivedSignals, {
+    fields: [facilityEvents.signalId],
+    references: [derivedSignals.id],
+  }),
+}));
+
+export const modelHypothesesRelations = relations(modelHypotheses, ({ one }) => ({
+  facility: one(facilityMaster, {
+    fields: [modelHypotheses.facilityId],
+    references: [facilityMaster.id],
+  }),
+  project: one(industrialProjects, {
+    fields: [modelHypotheses.projectId],
+    references: [industrialProjects.id],
   }),
 }));
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { put } from "@vercel/blob";
+import { getDataBoundaryPolicyForOrg, normalizeOrgSlug } from "@/lib/data-boundary";
 
 const IntakeSchema = z.object({
   name: z.string().min(2).max(100),
@@ -14,6 +15,7 @@ const IntakeSchema = z.object({
   payback: z.enum(["lt_6", "6_12", "gt_12"]),
   budgetBand: z.enum(["up_to_10", "10_20", "20_plus"]),
   estimatedMonthly: z.number().min(0),
+  orgSlug: z.string().optional(),
 });
 
 export const dynamic = "force-dynamic";
@@ -31,7 +33,11 @@ export async function POST(req: Request) {
     const payload = { ...parsed.data, createdAt: now };
 
     const blobToken = process.env.BLOB_READ_WRITE_TOKEN;
-    if (blobToken) {
+    const headerOrg = normalizeOrgSlug(req.headers.get("x-baseload-org"));
+    const boundary = await getDataBoundaryPolicyForOrg(parsed.data.orgSlug ?? headerOrg);
+
+    // Intake payload storage in hosted blob is opt-in only.
+    if (blobToken && boundary.hostedIntakeStorageEnabled) {
       const key = `intake/${now}-${payload.company.replace(/[^a-zA-Z0-9-_]/g, "-")}.json`;
       await put(key, JSON.stringify(payload, null, 2), {
         access: "public",
@@ -43,7 +49,12 @@ export async function POST(req: Request) {
       console.log("[PlantTrace Intake]", payload);
     }
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({
+      ok: true,
+      dataBoundaryMode: boundary.mode,
+      orgSlug: boundary.orgSlug,
+      storageMode: boundary.hostedIntakeStorageEnabled ? "hosted_intake_pilot" : "metadata_only",
+    });
   } catch (error) {
     console.error("Intake submission failed", error);
     return NextResponse.json({ error: "Failed to process intake" }, { status: 500 });

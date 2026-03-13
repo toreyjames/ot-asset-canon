@@ -15,6 +15,7 @@ type IngestionSource =
 
 type DeploymentMode = "customer_cloud" | "hybrid_connector";
 type OperatingScope = "single_plant" | "company_portfolio" | "multi_tenant";
+type DataBoundaryMode = "customer_agent" | "customer_cloud" | "hosted_pilot";
 type DemoPackOption =
   | "single_plant_baseline"
   | "multi_plant_portfolio"
@@ -27,6 +28,19 @@ interface IngestionResult {
   assetsCreated: number;
   assetsUpdated: number;
   errors: string[];
+  storageMode?: "metadata_only" | "hosted_raw_pilot";
+  dataBoundaryMode?: DataBoundaryMode;
+  orgSlug?: string | null;
+}
+
+interface DataBoundaryPolicy {
+  orgSlug: string | null;
+  mode: DataBoundaryMode;
+  rawStorage: "customer_environment_only" | "hosted_raw_pilot" | "metadata_only";
+  intakeStorage: "customer_environment_only" | "hosted_intake_pilot" | "metadata_only";
+  hostedRawUploadsEnabled: boolean;
+  hostedIntakeStorageEnabled: boolean;
+  source: "default" | "org_setting";
 }
 
 interface HybridDemoResponse {
@@ -110,6 +124,12 @@ export default function IngestPage() {
   const [virtualDemoFileName, setVirtualDemoFileName] = useState<string | null>(null);
   const [autoDemoTriggered, setAutoDemoTriggered] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
+  const [orgSlug, setOrgSlug] = useState("tmna");
+  const [boundaryMode, setBoundaryMode] = useState<DataBoundaryMode>("customer_agent");
+  const [boundaryPolicy, setBoundaryPolicy] = useState<DataBoundaryPolicy | null>(null);
+  const [boundaryLoading, setBoundaryLoading] = useState(false);
+  const [boundarySaving, setBoundarySaving] = useState(false);
+  const [boundaryMessage, setBoundaryMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -184,6 +204,7 @@ export default function IngestPage() {
       const formData = new FormData();
       formData.append("file", selectedFile);
       formData.append("source", uploadSource);
+      formData.append("orgSlug", orgSlug.trim().toLowerCase());
 
       const response = await fetch("/api/ingest", {
         method: "POST",
@@ -199,6 +220,48 @@ export default function IngestPage() {
       setError(err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const loadBoundaryPolicy = async (targetOrgSlug: string) => {
+    const normalized = targetOrgSlug.trim().toLowerCase();
+    if (!normalized) return;
+    setBoundaryLoading(true);
+    setBoundaryMessage(null);
+    try {
+      const response = await fetch(
+        `/api/assessment/data-boundary?org=${encodeURIComponent(normalized)}`
+      );
+      const data = await response.json();
+      if (!response.ok || !data?.policy) throw new Error(data.error || "Failed to load");
+      setBoundaryPolicy(data.policy);
+      setBoundaryMode(data.policy.mode);
+    } catch (err) {
+      setBoundaryMessage(err instanceof Error ? err.message : "Unable to load policy");
+    } finally {
+      setBoundaryLoading(false);
+    }
+  };
+
+  const saveBoundaryPolicy = async () => {
+    const normalized = orgSlug.trim().toLowerCase();
+    if (!normalized) return;
+    setBoundarySaving(true);
+    setBoundaryMessage(null);
+    try {
+      const response = await fetch("/api/assessment/data-boundary", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ orgSlug: normalized, mode: boundaryMode }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data?.policy) throw new Error(data.error || "Failed to save");
+      setBoundaryPolicy(data.policy);
+      setBoundaryMessage("Data boundary saved.");
+    } catch (err) {
+      setBoundaryMessage(err instanceof Error ? err.message : "Unable to save policy");
+    } finally {
+      setBoundarySaving(false);
     }
   };
 
@@ -341,6 +404,15 @@ export default function IngestPage() {
     return () => clearTimeout(timer);
   }, [demoMode, result, isLoading, demoRunLoading, router]);
 
+  useEffect(() => {
+    const normalized = orgSlug.trim().toLowerCase();
+    if (!normalized) return;
+    const timer = setTimeout(() => {
+      void loadBoundaryPolicy(normalized);
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [orgSlug]);
+
   if (demoMode) {
     return (
       <div className="min-h-screen bg-[#050915] text-slate-100 px-4 py-10">
@@ -435,6 +507,92 @@ export default function IngestPage() {
         <div className="rounded-2xl border border-slate-700/70 bg-slate-900/75 p-6">
           <h2 className="text-lg font-semibold text-white">Run Configuration</h2>
           <form onSubmit={handleSubmit} className="mt-5 space-y-5">
+            <div>
+              <div className="text-xs text-slate-400 mb-2">Assessment Org</div>
+              <input
+                value={orgSlug}
+                onChange={(e) => setOrgSlug(e.target.value)}
+                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                placeholder="tmna"
+              />
+              <p className="mt-1 text-[11px] text-slate-500">
+                Used to persist data-boundary policy for this org.
+              </p>
+            </div>
+
+            <div>
+              <div className="text-xs text-slate-400 mb-2">Data Boundary (Phase 0)</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                <ModeCard
+                  title="Customer Agent"
+                  body="Raw data stays customer-side"
+                  active={boundaryMode === "customer_agent"}
+                  onClick={() => setBoundaryMode("customer_agent")}
+                />
+                <ModeCard
+                  title="Customer Cloud"
+                  body="Cloud model, metadata-first"
+                  active={boundaryMode === "customer_cloud"}
+                  onClick={() => setBoundaryMode("customer_cloud")}
+                />
+                <ModeCard
+                  title="Hosted Pilot"
+                  body="Hosted storage pilot gates"
+                  active={boundaryMode === "hosted_pilot"}
+                  onClick={() => setBoundaryMode("hosted_pilot")}
+                />
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={saveBoundaryPolicy}
+                  disabled={boundarySaving || boundaryLoading || !orgSlug.trim()}
+                  className="rounded-md border border-cyan-400/60 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-500/20 disabled:opacity-60"
+                >
+                  {boundarySaving ? "Saving..." : "Save Data Boundary"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void loadBoundaryPolicy(orgSlug)}
+                  disabled={boundarySaving || boundaryLoading || !orgSlug.trim()}
+                  className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 hover:border-cyan-400/60 disabled:opacity-60"
+                >
+                  {boundaryLoading ? "Loading..." : "Refresh Policy"}
+                </button>
+              </div>
+              {boundaryMessage && (
+                <div className="mt-2 text-xs text-slate-300">{boundaryMessage}</div>
+              )}
+            </div>
+
+            <div className="rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs">
+              <div className="text-slate-200">Where Data Lives</div>
+              <div className="mt-2 text-slate-400">
+                Org: <span className="text-slate-200">{boundaryPolicy?.orgSlug || orgSlug || "n/a"}</span>
+              </div>
+              <div className="mt-1 text-slate-400">
+                Mode: <span className="text-slate-200">{boundaryPolicy?.mode || boundaryMode}</span>
+              </div>
+              <div className="mt-1 text-slate-400">
+                Raw upload storage: <span className="text-slate-200">{boundaryPolicy?.rawStorage || "metadata_only"}</span>
+              </div>
+              <div className="mt-1 text-slate-400">
+                Intake storage: <span className="text-slate-200">{boundaryPolicy?.intakeStorage || "metadata_only"}</span>
+              </div>
+              <div className="mt-1 text-slate-400">
+                Hosted raw enabled:{" "}
+                <span className={boundaryPolicy?.hostedRawUploadsEnabled ? "text-emerald-300" : "text-amber-300"}>
+                  {boundaryPolicy?.hostedRawUploadsEnabled ? "yes" : "no"}
+                </span>
+              </div>
+              <div className="mt-1 text-slate-400">
+                Hosted intake enabled:{" "}
+                <span className={boundaryPolicy?.hostedIntakeStorageEnabled ? "text-emerald-300" : "text-amber-300"}>
+                  {boundaryPolicy?.hostedIntakeStorageEnabled ? "yes" : "no"}
+                </span>
+              </div>
+            </div>
+
             <div>
               <div className="text-xs text-slate-400 mb-2">Deployment Mode</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -647,6 +805,13 @@ export default function IngestPage() {
                 <div className="font-semibold">Run Complete · {result.status}</div>
                 <div className="mt-1">Created: {result.assetsCreated.toLocaleString()} · Updated: {result.assetsUpdated.toLocaleString()}</div>
                 <div className="mt-1">Estimated analyst hours saved this run: ~{estimatedHoursSaved}</div>
+                {result.dataBoundaryMode && (
+                  <div className="mt-1">
+                    Data boundary: {result.dataBoundaryMode}
+                    {result.orgSlug ? ` (${result.orgSlug})` : ""}
+                    {result.storageMode ? ` · Storage: ${result.storageMode}` : ""}
+                  </div>
+                )}
                 {result.errors.length > 0 && <div className="mt-1 text-amber-200">Errors: {result.errors.length}</div>}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <Link

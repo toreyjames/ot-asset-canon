@@ -3,6 +3,7 @@ import { db } from "@/db";
 import { assets, ingestionJobs } from "@/db/schema";
 import { eq } from "drizzle-orm";
 import { put } from "@vercel/blob";
+import { getDataBoundaryPolicyForOrg, normalizeOrgSlug } from "@/lib/data-boundary";
 
 export const maxDuration = 300; // 5 minutes for large file processing
 
@@ -23,16 +24,23 @@ interface IngestionResult {
   assetsCreated: number;
   assetsUpdated: number;
   errors: string[];
+  storageMode?: "metadata_only" | "hosted_raw_pilot";
+  dataBoundaryMode?: "customer_agent" | "customer_cloud" | "hosted_pilot";
+  orgSlug?: string | null;
 }
 
 export async function POST(request: Request) {
   const contentType = request.headers.get("content-type") || "";
+  const headerOrg = normalizeOrgSlug(request.headers.get("x-baseload-org"));
 
   if (contentType.includes("multipart/form-data")) {
     // File upload
     const formData = await request.formData();
     const file = formData.get("file") as File;
     const source = formData.get("source") as IngestionSource;
+    const bodyOrg = normalizeOrgSlug(formData.get("orgSlug")?.toString());
+    const orgSlug = bodyOrg ?? headerOrg;
+    const boundary = await getDataBoundaryPolicyForOrg(orgSlug);
 
     if (!file || !source) {
       return NextResponse.json(
@@ -41,17 +49,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // Store file in Vercel Blob
-    const blob = await put(`ingestion/${source}/${file.name}`, file, {
-      access: "public",
-    });
+    let blobUrl: string | undefined;
+    // Raw hosted storage is opt-in for pilot mode only.
+    if (boundary.hostedRawUploadsEnabled) {
+      const blob = await put(`ingestion/${source}/${file.name}`, file, {
+        access: "public",
+      });
+      blobUrl = blob.url;
+    }
 
     // Create ingestion job
     const content = await file.text();
-    return processIngestion(source, content, blob.url, file.name);
+    return processIngestion(source, content, blobUrl, file.name, boundary.mode, boundary.orgSlug);
   } else {
     // Direct JSON payload
-    const { source, data } = await request.json();
+    const { source, data, orgSlug: bodyOrgSlug } = await request.json();
+    const orgSlug = normalizeOrgSlug(bodyOrgSlug) ?? headerOrg;
+    const boundary = await getDataBoundaryPolicyForOrg(orgSlug);
 
     if (!source || !data) {
       return NextResponse.json(
@@ -60,7 +74,14 @@ export async function POST(request: Request) {
       );
     }
 
-    return processIngestion(source, JSON.stringify(data), undefined, "direct-api");
+    return processIngestion(
+      source,
+      JSON.stringify(data),
+      undefined,
+      "direct-api",
+      boundary.mode,
+      boundary.orgSlug
+    );
   }
 }
 
@@ -68,7 +89,9 @@ async function processIngestion(
   source: IngestionSource,
   content: string,
   blobUrl?: string,
-  fileName?: string
+  fileName?: string,
+  dataBoundaryMode: "customer_agent" | "customer_cloud" | "hosted_pilot" = "customer_agent",
+  orgSlug: string | null = null
 ): Promise<NextResponse> {
   const result: IngestionResult = {
     jobId: crypto.randomUUID(),
@@ -76,6 +99,9 @@ async function processIngestion(
     assetsCreated: 0,
     assetsUpdated: 0,
     errors: [],
+    storageMode: blobUrl ? "hosted_raw_pilot" : "metadata_only",
+    dataBoundaryMode,
+    orgSlug,
   };
 
   try {
