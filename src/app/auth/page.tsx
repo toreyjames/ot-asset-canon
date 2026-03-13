@@ -35,13 +35,13 @@ export default function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#050915] text-slate-100 px-4 py-12">
-      <div className="max-w-md mx-auto rounded-2xl border border-slate-700/70 bg-slate-900/80 p-6">
-        <div className="text-xs uppercase tracking-wide text-cyan-300">Baseload Access</div>
-        <h1 className="mt-2 text-3xl font-semibold">
+    <div className="industrial-spec min-h-screen bg-[#060606] text-zinc-100 px-4 py-12">
+      <div className="mx-auto max-w-md spec-block p-6">
+        <div className="spec-eyebrow">Baseload Access</div>
+        <h1 className="spec-title mt-2 text-3xl">
           {mode === "signin" ? "Sign In" : "Create Account"}
         </h1>
-        <p className="mt-2 text-sm text-slate-300">
+        <p className="spec-body mt-2 text-sm">
           Sign in to save assessments, manage opportunities, and keep team workspace history.
         </p>
 
@@ -49,27 +49,27 @@ export default function AuthPage() {
           <button
             type="button"
             disabled
-            className="w-full rounded-md border border-slate-700 bg-slate-950 px-4 py-2.5 text-sm text-slate-400 disabled:opacity-80"
+            className="w-full rounded-md border border-zinc-700 bg-[#090909] px-4 py-2.5 text-sm text-zinc-400 disabled:opacity-80"
           >
             Continue with Microsoft (Workplace) - Coming Soon
           </button>
-          <div className="text-[11px] text-slate-500">
+          <div className="text-[11px] text-zinc-500">
             Recommended for enterprise teams using Microsoft 365 and Entra ID.
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-2 rounded-md border border-slate-700 bg-slate-950 p-1 text-sm">
+        <div className="mt-5 grid grid-cols-2 rounded-md border border-zinc-700 bg-[#090909] p-1 text-sm">
           <button
             type="button"
             onClick={() => setMode("signin")}
-            className={`rounded px-3 py-2 ${mode === "signin" ? "bg-cyan-500/20 text-cyan-100" : "text-slate-300"}`}
+            className={`rounded px-3 py-2 ${mode === "signin" ? "bg-cyan-500/20 text-cyan-100" : "text-zinc-300"}`}
           >
             Sign In
           </button>
           <button
             type="button"
             onClick={() => setMode("signup")}
-            className={`rounded px-3 py-2 ${mode === "signup" ? "bg-cyan-500/20 text-cyan-100" : "text-slate-300"}`}
+            className={`rounded px-3 py-2 ${mode === "signup" ? "bg-cyan-500/20 text-cyan-100" : "text-zinc-300"}`}
           >
             Create Account
           </button>
@@ -89,17 +89,17 @@ export default function AuthPage() {
           <button
             type="button"
             onClick={handleAuth}
-            className="w-full rounded-md bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
+            className="spec-link w-full rounded-md px-4 py-2.5 text-sm font-semibold text-center"
           >
             {mode === "signin" ? "Sign In" : "Create Account"}
           </button>
         </form>
 
-        <div className="mt-4 text-xs text-slate-400">
+        <div className="mt-4 text-xs text-zinc-400">
           {mode === "signin" ? "Need access? Create an account." : "Already have an account? Switch to Sign In."}
         </div>
         <div className="mt-6 text-xs">
-          <Link href="/" className="text-cyan-300 hover:text-cyan-200">
+          <Link href="/" className="spec-link">
             Return Home
           </Link>
         </div>
@@ -123,12 +123,12 @@ function Field({
 }) {
   return (
     <label className="block">
-      <span className="text-xs text-slate-400">{label}</span>
+      <span className="text-xs text-zinc-400">{label}</span>
       <input
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1 w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm"
+        className="mt-1 w-full rounded-md border border-zinc-700 bg-[#090909] px-3 py-2 text-sm text-zinc-100"
         placeholder={placeholder}
       />
     </label>
