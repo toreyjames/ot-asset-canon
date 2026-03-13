@@ -124,6 +124,7 @@ export default function IngestPage() {
   const [virtualDemoFileName, setVirtualDemoFileName] = useState<string | null>(null);
   const [autoDemoTriggered, setAutoDemoTriggered] = useState(false);
   const [demoMode, setDemoMode] = useState(false);
+  const [allowDemoTools, setAllowDemoTools] = useState(false);
   const [orgSlug, setOrgSlug] = useState("tmna");
   const [boundaryMode, setBoundaryMode] = useState<DataBoundaryMode>("customer_agent");
   const [boundaryPolicy, setBoundaryPolicy] = useState<DataBoundaryPolicy | null>(null);
@@ -186,12 +187,7 @@ export default function IngestPage() {
     if (sourceBundle.length === 0) {
       setSourceBundle([uploadSource || "manual"]);
     }
-    if (!file && !demoResult) return;
-
-    if (!file && demoResult) {
-      await startWithDemoPack();
-      return;
-    }
+    if (!file) return;
     const selectedFile = file;
     if (!selectedFile) return;
 
@@ -394,6 +390,7 @@ export default function IngestPage() {
     if (typeof window === "undefined") return;
     const params = new URLSearchParams(window.location.search);
     setDemoMode(params.get("demo") === "1");
+    setAllowDemoTools(params.get("demoTools") === "1");
   }, []);
 
   useEffect(() => {
@@ -498,8 +495,7 @@ export default function IngestPage() {
           change setpoints, modify PLC logic, or impact live process operations.
         </div>
         <div className="mt-4 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
-          Quick start: 1) Generate Demo Pack 2) Confirm demo file appears in Data File 3) Click Start Data Gathering Agent
-          4) Continue to Inventory.
+          Quick start: 1) Set org + data boundary 2) Select source bundle 3) Upload file 4) Start Data Gathering Agent.
         </div>
       </div>
 
@@ -779,18 +775,14 @@ export default function IngestPage() {
 
             <button
               type="submit"
-              disabled={(!file && !demoResult) || isLoading || demoRunLoading}
+              disabled={!file || isLoading || demoRunLoading}
               className="w-full rounded-md bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
             >
-              {isLoading || demoRunLoading
-                ? "Agent Running..."
-                : demoResult
-                ? "Start Data Gathering Agent (Use Demo Pack)"
-                : "Start Data Gathering Agent"}
+              {isLoading || demoRunLoading ? "Agent Running..." : "Start Data Gathering Agent"}
             </button>
-            {!file && !demoResult && (
+            {!file && (
               <p className="text-[11px] text-amber-300">
-                Upload a file to run this button, or use the Demo Pack Runner path on the right.
+                Upload a file to run this button.
               </p>
             )}
             <p className="text-[11px] text-slate-500">
@@ -859,7 +851,8 @@ export default function IngestPage() {
             </p>
           </div>
 
-          <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+          {allowDemoTools ? (
+            <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
             <div className="text-xs uppercase tracking-wide text-cyan-300">Demo Pack Runner</div>
             <p className="mt-2 text-sm text-slate-300">
               Run a realistic demo pack directly in the app (no terminal required).
@@ -936,7 +929,8 @@ export default function IngestPage() {
                 )}
               </div>
             )}
-          </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

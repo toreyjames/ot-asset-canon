@@ -22,6 +22,7 @@ export default function OnboardingPage() {
   const [industry, setIndustry] = useState("Automotive");
   const [objective, setObjective] = useState<"mission_map" | "industry_tracker">("mission_map");
   const [privacyMode, setPrivacyMode] = useState<"private_by_default" | "shared_demo">("private_by_default");
+  const [experienceMode, setExperienceMode] = useState<"client_first" | "demo_first">("client_first");
 
   function continueFlow() {
     const nextCompany = company.trim();
@@ -40,6 +41,11 @@ export default function OnboardingPage() {
       objective,
       privacyMode,
     });
+
+    if (experienceMode === "demo_first") {
+      router.push(`/ingest?demo=1&orgSlug=${encodeURIComponent(nextCompany.toLowerCase().replace(/\s+/g, "-"))}`);
+      return;
+    }
 
     if (objective === "mission_map") {
       router.push(`/ingest?orgSlug=${encodeURIComponent(nextCompany.toLowerCase().replace(/\s+/g, "-"))}`);
@@ -95,16 +101,16 @@ export default function OnboardingPage() {
 
           <div className="mt-5 grid gap-3 md:grid-cols-2">
             <ChoiceCard
-              active={privacyMode === "private_by_default"}
-              title="Private By Default"
-              subtitle="Only your workspace and your uploads are visible."
-              onClick={() => setPrivacyMode("private_by_default")}
+              active={experienceMode === "client_first"}
+              title="Client Workflow First"
+              subtitle="Start with your own business data and onboarding."
+              onClick={() => setExperienceMode("client_first")}
             />
             <ChoiceCard
-              active={privacyMode === "shared_demo"}
-              title="Demo Shared Context"
-              subtitle="Includes broader national context for demo storytelling."
-              onClick={() => setPrivacyMode("shared_demo")}
+              active={experienceMode === "demo_first"}
+              title="Demo First (Optional)"
+              subtitle="Launch the guided demo run before client data onboarding."
+              onClick={() => setExperienceMode("demo_first")}
             />
           </div>
 
