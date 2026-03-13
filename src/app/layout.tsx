@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import PlantRealityCanvas from "@/components/layout/PlantRealityCanvas";
+import { PLATFORM_BRAND } from "@/lib/platform/brand";
 
 export const metadata: Metadata = {
-  title: "PlantTrace | OT Asset Assurance",
-  description:
-    "Build an evidence-backed OT asset baseline, verify coverage, and operationalize plant visibility.",
+  title: `${PLATFORM_BRAND.companyName} | ${PLATFORM_BRAND.tagline}`,
+  description: PLATFORM_BRAND.description,
 };
 
 export default function RootLayout({
@@ -15,7 +15,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className="antialiased relative overflow-x-hidden">
+      <body className="theme-baseload antialiased relative overflow-x-hidden">
         <PlantRealityCanvas />
         <div className="relative z-10">
           {children}

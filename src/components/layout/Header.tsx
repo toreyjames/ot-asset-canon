@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import BaseloadLogo from "@/components/marketing/BaseloadLogo";
+import PlatformNav from "@/components/platform/PlatformNav";
 
 interface Site {
   id: string;
@@ -22,13 +24,17 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
   const [userMenuOpen, setUserMenuOpen] = useState(false);
 
   return (
-    <header className="m-3 mb-0 h-16 rounded-xl border border-slate-200/80 bg-white/85 px-5 backdrop-blur-sm shadow-sm flex items-center justify-between">
+    <header className="app-shell-card m-3 mb-0 h-16 rounded-xl px-5 flex items-center justify-between">
       <div className="flex items-center gap-4">
+        <div className="hidden xl:block">
+          <BaseloadLogo compact accent="dark" />
+        </div>
+        <PlatformNav className="hidden lg:flex" />
         {currentSite ? (
           <div className="relative">
             <button
               onClick={() => setSiteMenuOpen(!siteMenuOpen)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+              className="app-nav-link flex items-center gap-2 px-3 py-1.5 rounded-lg transition-colors"
             >
               <span className="text-sm text-slate-500">Site</span>
               <span className="text-sm font-semibold text-slate-900">{currentSite.name}</span>
@@ -40,8 +46,8 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
             {siteMenuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setSiteMenuOpen(false)} />
-                <div className="absolute top-full left-0 mt-1 w-72 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-20">
-                  <div className="px-3 py-2 border-b border-slate-100">
+                <div className="app-menu absolute top-full left-0 mt-1 w-72 rounded-xl py-2 z-20">
+                  <div className="px-3 py-2 border-b border-slate-200/80">
                     <div className="text-xs font-medium text-slate-500 uppercase tracking-wider">Switch Site</div>
                   </div>
                   {sites.map((site) => (
@@ -49,8 +55,8 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
                       key={site.id}
                       href={`/sites/${site.slug}`}
                       onClick={() => setSiteMenuOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2 hover:bg-slate-50 ${
-                        site.id === currentSite.id ? "bg-cyan-50" : ""
+                      className={`flex items-center justify-between px-3 py-2 hover:bg-slate-100 ${
+                        site.id === currentSite.id ? "app-nav-link-active" : ""
                       }`}
                     >
                       <div>
@@ -60,17 +66,17 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
                       <div
                         className={`text-sm font-semibold ${
                           site.reconstructionScore >= 90
-                            ? "text-emerald-600"
+                            ? "text-emerald-400"
                             : site.reconstructionScore >= 70
-                              ? "text-amber-600"
-                              : "text-rose-600"
+                              ? "text-amber-300"
+                              : "text-rose-300"
                         }`}
                       >
                         {site.reconstructionScore}%
                       </div>
                     </Link>
                   ))}
-                  <div className="border-t border-slate-100 mt-2 pt-2 px-3">
+                  <div className="border-t border-slate-200/80 mt-2 pt-2 px-3">
                     <Link
                       href="/"
                       onClick={() => setSiteMenuOpen(false)}
@@ -91,15 +97,7 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
         )}
 
         {currentSite && (
-          <div
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium ${
-              currentSite.reconstructionScore >= 90
-                ? "bg-emerald-100 text-emerald-700"
-                : currentSite.reconstructionScore >= 70
-                  ? "bg-amber-100 text-amber-700"
-                  : "bg-rose-100 text-rose-700"
-            }`}
-          >
+          <div className="app-chip flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium">
             <span className="w-1.5 h-1.5 rounded-full bg-current"></span>
             {currentSite.reconstructionScore}% Reconstructed
           </div>
@@ -109,7 +107,7 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
       <div className="flex items-center gap-3">
         <Link
           href="/ai"
-          className="flex items-center gap-2 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-700 text-white text-sm font-medium rounded-lg transition-colors"
+          className="app-nav-link app-nav-link-active flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg transition-colors"
         >
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
@@ -117,7 +115,7 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
           AI Query
         </Link>
 
-        <button className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors" aria-label="Notifications">
+        <button className="app-nav-link p-2 rounded-lg transition-colors" aria-label="Notifications">
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
           </svg>
@@ -126,9 +124,9 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
         <div className="relative">
           <button
             onClick={() => setUserMenuOpen(!userMenuOpen)}
-            className="flex items-center gap-2 p-1.5 rounded-lg hover:bg-slate-100 transition-colors"
+            className="app-nav-link flex items-center gap-2 p-1.5 rounded-lg transition-colors"
           >
-            <div className="w-8 h-8 bg-cyan-600 rounded-full flex items-center justify-center text-white text-sm font-medium">
+            <div className="w-8 h-8 app-nav-link-active rounded-full flex items-center justify-center text-sm font-medium">
               {userName.charAt(0).toUpperCase()}
             </div>
           </button>
@@ -136,22 +134,22 @@ export default function Header({ currentSite, sites = [], userName = "User" }: H
           {userMenuOpen && (
             <>
               <div className="fixed inset-0 z-10" onClick={() => setUserMenuOpen(false)} />
-              <div className="absolute top-full right-0 mt-1 w-52 bg-white rounded-xl shadow-xl border border-slate-200 py-2 z-20">
-                <div className="px-3 py-2 border-b border-slate-100">
+              <div className="app-menu absolute top-full right-0 mt-1 w-52 rounded-xl py-2 z-20">
+                <div className="px-3 py-2 border-b border-slate-200/80">
                   <div className="text-sm font-medium text-slate-900">{userName}</div>
                   <div className="text-xs text-slate-500">Administrator</div>
                 </div>
-                <Link href="/framework" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                <Link href="/framework" className="block px-3 py-2 text-sm app-nav-link rounded-md mx-1">
                   Framework
                 </Link>
-                <Link href="/roi" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                <Link href="/roi" className="block px-3 py-2 text-sm app-nav-link rounded-md mx-1">
                   ROI Model
                 </Link>
-                <Link href="/ingest" className="block px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                <Link href="/ingest" className="block px-3 py-2 text-sm app-nav-link rounded-md mx-1">
                   Data Sources
                 </Link>
-                <div className="border-t border-slate-100 mt-1 pt-1">
-                  <button className="block w-full text-left px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                <div className="border-t border-slate-200/80 mt-1 pt-1">
+                  <button className="block w-full text-left px-3 py-2 text-sm app-nav-link rounded-md mx-1">
                     Sign Out
                   </button>
                 </div>

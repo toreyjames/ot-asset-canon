@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import BaseloadLogo from "@/components/marketing/BaseloadLogo";
 
 const navigation = [
   {
@@ -112,24 +113,23 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
   };
 
   return (
-    <div className="m-3 mr-0 flex h-[calc(100vh-1.5rem)] w-72 flex-col overflow-hidden rounded-2xl border border-slate-200/80 bg-white/85 shadow-sm backdrop-blur-sm">
-      <div className="flex h-16 shrink-0 items-center px-5 border-b border-slate-200/80 bg-gradient-to-r from-cyan-50 to-blue-50">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex items-center gap-0.5">
-            <span className="w-1.5 h-4 rounded-sm bg-cyan-500"></span>
-            <span className="w-1.5 h-4 rounded-sm bg-blue-500"></span>
-            <span className="w-1.5 h-4 rounded-sm bg-indigo-500"></span>
+    <div className="app-shell-card m-3 mr-0 flex h-[calc(100vh-1.5rem)] w-72 flex-col overflow-hidden rounded-2xl">
+      <div className="flex h-16 shrink-0 items-center px-5 border-b border-slate-200/80">
+        <div className="flex w-full items-center justify-between gap-3">
+          <BaseloadLogo href="/" compact accent="dark" />
+          <div className="text-right">
+            <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">Module</div>
+            <div className="text-sm font-semibold text-slate-900">PlantTrace</div>
           </div>
-          <span className="text-lg font-semibold text-slate-900 tracking-tight">PlantTrace</span>
-        </Link>
+        </div>
       </div>
 
       {siteName && (
-        <div className="px-4 py-3 border-b border-slate-200/80 bg-slate-50/70">
+        <div className="px-4 py-3 border-b border-slate-200/80">
           <div className="text-[11px] font-medium text-slate-500 uppercase tracking-wider">Current Site</div>
           <div className="mt-1 flex items-center justify-between gap-2">
             <span className="text-sm font-semibold text-slate-900 truncate">{siteName}</span>
-            <Link href="/" className="text-xs text-cyan-700 hover:text-cyan-900 font-medium whitespace-nowrap">
+            <Link href="/" className="text-xs text-cyan-700 font-medium whitespace-nowrap">
               Change
             </Link>
           </div>
@@ -142,10 +142,10 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
             <li key={item.name}>
               <Link
                 href={getHref(item.href)}
-                className={`group flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                className={`group app-nav-link flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                   isActive(item.href)
-                    ? "bg-cyan-50 text-cyan-800"
-                    : "text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                    ? "app-nav-link-active"
+                    : ""
                 }`}
               >
                 <span className={isActive(item.href) ? "text-cyan-700" : "text-slate-400 group-hover:text-slate-600"}>
@@ -163,10 +163,10 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
               <li key={item.name}>
                 <Link
                   href={getHref(item.href)}
-                  className={`group flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+                  className={`group app-nav-link flex gap-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
                     isActive(item.href)
-                      ? "bg-cyan-50 text-cyan-800"
-                      : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
+                      ? "app-nav-link-active"
+                      : ""
                   }`}
                 >
                   <span className={isActive(item.href) ? "text-cyan-700" : "text-slate-400 group-hover:text-slate-500"}>

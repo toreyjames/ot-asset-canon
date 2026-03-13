@@ -3,15 +3,23 @@
 @tailwind utilities;
 
 :root {
-  --foreground: #171717;
-  --background: #ffffff;
-  --brand-ink: #0b1220;
-  --brand-panel: #0f172a;
-  --brand-cyan: #22d3ee;
-  --brand-blue: #3b82f6;
-  --surface-0: #f8fafc;
-  --surface-1: #eef2ff;
-  --surface-2: #dbeafe;
+  --foreground: #e4e9f3;
+  --background: #070b13;
+  --brand-ink: #050912;
+  --brand-panel: #0c1320;
+  --brand-cyan: #7dd3fc;
+  --brand-blue: #5aa3ff;
+  --surface-0: #070b13;
+  --surface-1: #0d1524;
+  --surface-2: #151f33;
+  --surface-hover: #18243b;
+  --border-strong: rgba(157, 184, 225, 0.38);
+  --border-soft: rgba(157, 184, 225, 0.24);
+  --text-primary: #e4e9f3;
+  --text-secondary: #bdc8da;
+  --text-muted: #8e9ab0;
+  --accent: #7dd3fc;
+  --accent-strong: #38bdf8;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -22,12 +30,114 @@
 }
 
 body {
-  color: var(--foreground);
+  color: var(--text-primary);
   background:
-    radial-gradient(circle at 8% 0%, rgba(34, 211, 238, 0.09), transparent 38%),
-    radial-gradient(circle at 100% 12%, rgba(59, 130, 246, 0.10), transparent 36%),
-    linear-gradient(180deg, #f8fafc 0%, #eef2ff 45%, #f8fafc 100%);
-  font-family: "Satoshi", "Avenir Next", "IBM Plex Sans", "Segoe UI", sans-serif;
+    radial-gradient(circle at 10% -4%, rgba(125, 211, 252, 0.12), transparent 36%),
+    radial-gradient(circle at 94% 0%, rgba(90, 163, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, #070b13 0%, #0a1220 58%, #070b13 100%);
+  font-family: "IBM Plex Sans", "Satoshi", "Avenir Next", "Segoe UI", sans-serif;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+}
+
+.theme-baseload {
+  color: var(--text-primary);
+}
+
+.theme-baseload [class*="bg-white"],
+.theme-baseload [class*="bg-slate-50"],
+.theme-baseload [class*="bg-slate-100"],
+.theme-baseload [class*="bg-gray-50"] {
+  background-color: var(--surface-1) !important;
+}
+
+.theme-baseload [class*="border-slate-200"],
+.theme-baseload [class*="border-gray-200"],
+.theme-baseload [class*="border-slate-300"],
+.theme-baseload [class*="border-gray-300"] {
+  border-color: var(--border-soft) !important;
+}
+
+.theme-baseload [class*="text-slate-900"],
+.theme-baseload [class*="text-gray-900"] {
+  color: var(--text-primary) !important;
+}
+
+.theme-baseload [class*="text-slate-700"],
+.theme-baseload [class*="text-slate-600"],
+.theme-baseload [class*="text-slate-500"],
+.theme-baseload [class*="text-gray-700"],
+.theme-baseload [class*="text-gray-600"],
+.theme-baseload [class*="text-gray-500"] {
+  color: var(--text-secondary) !important;
+}
+
+.theme-baseload [class*="text-slate-400"],
+.theme-baseload [class*="text-gray-400"] {
+  color: var(--text-muted) !important;
+}
+
+.theme-baseload [class*="bg-cyan-50"],
+.theme-baseload [class*="bg-blue-50"],
+.theme-baseload [class*="bg-cyan-100"] {
+  background-color: rgba(125, 211, 252, 0.12) !important;
+}
+
+.theme-baseload [class*="text-cyan-700"],
+.theme-baseload [class*="text-cyan-800"],
+.theme-baseload [class*="text-cyan-900"],
+.theme-baseload [class*="text-cyan-600"] {
+  color: var(--accent) !important;
+}
+
+.theme-baseload [class*="bg-cyan-600"],
+.theme-baseload [class*="bg-cyan-500"],
+.theme-baseload [class*="bg-blue-600"] {
+  background-color: var(--accent-strong) !important;
+}
+
+.theme-baseload [class*="hover:bg-slate-100"]:hover,
+.theme-baseload [class*="hover:bg-slate-50"]:hover,
+.theme-baseload [class*="hover:bg-gray-100"]:hover {
+  background-color: var(--surface-hover) !important;
+}
+
+.app-shell-card {
+  border: 1px solid var(--border-soft);
+  background: color-mix(in srgb, var(--surface-1) 94%, transparent);
+  box-shadow: 0 14px 36px rgba(4, 8, 15, 0.36);
+  backdrop-filter: blur(10px);
+}
+
+.app-menu {
+  border: 1px solid var(--border-strong);
+  background: color-mix(in srgb, var(--surface-1) 96%, transparent);
+  box-shadow: 0 18px 34px rgba(4, 8, 15, 0.42);
+}
+
+.app-nav-link {
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+}
+
+.app-nav-link:hover {
+  border-color: var(--border-soft);
+  color: var(--text-primary);
+  background: color-mix(in srgb, var(--surface-hover) 85%, transparent);
+}
+
+.app-nav-link-active {
+  border-color: rgba(125, 211, 252, 0.48);
+  background: rgba(125, 211, 252, 0.13);
+  color: var(--text-primary);
+}
+
+.app-chip {
+  border: 1px solid rgba(125, 211, 252, 0.42);
+  background: rgba(125, 211, 252, 0.13);
+  color: var(--accent);
 }
 
 /* Canon Layer Colors */
@@ -277,4 +387,449 @@ body {
   background: rgba(34, 211, 238, 0.24);
   box-shadow: 0 0 16px rgba(34, 211, 238, 0.5);
   animation: nodePulse 2.5s ease-out infinite;
+}
+
+/* High-contrast landing mode */
+.baseload-ops {
+  font-family: "Aptos", "Avenir Next", "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+/* Industrial tracker: harder tactical style */
+.industrial-ops-v2 {
+  background:
+    radial-gradient(circle at 8% 8%, rgba(255, 255, 255, 0.08), transparent 28%),
+    radial-gradient(circle at 82% 14%, rgba(185, 255, 90, 0.14), transparent 26%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.03) 0,
+      rgba(255, 255, 255, 0.03) 1px,
+      transparent 1px,
+      transparent 24px
+    ),
+    #070707;
+  color: #f4f4f5;
+  font-family: "Aptos", "Avenir Next", "IBM Plex Sans", "Segoe UI", sans-serif;
+}
+
+.industrial-ops-v2 .ops-kicker {
+  border-color: rgba(212, 212, 216, 0.4);
+  background: rgba(10, 10, 10, 0.86);
+  color: #d9ff64;
+}
+
+.industrial-ops-v2 [class*="rounded-2xl"],
+.industrial-ops-v2 [class*="rounded-xl"] {
+  border-radius: 0.5rem !important;
+}
+
+.industrial-ops-v2 [class*="border-slate-800"] {
+  border-color: rgba(113, 113, 122, 0.55) !important;
+}
+
+.industrial-ops-v2 [class*="border-slate-700"] {
+  border-color: rgba(113, 113, 122, 0.7) !important;
+}
+
+.industrial-ops-v2 [class*="bg-slate-900"] {
+  background-color: rgba(12, 12, 12, 0.9) !important;
+}
+
+.industrial-ops-v2 [class*="bg-slate-950"] {
+  background-color: rgba(6, 6, 6, 0.92) !important;
+}
+
+.industrial-ops-v2 [class*="text-cyan-300"],
+.industrial-ops-v2 [class*="text-emerald-300"],
+.industrial-ops-v2 [class*="text-emerald-200"] {
+  color: #d9ff64 !important;
+}
+
+.industrial-ops-v2 [class*="hover:border-cyan-400"] {
+  border-color: rgba(190, 242, 100, 0.5) !important;
+}
+
+.industrial-ops-v2 .ops-blueprint h2,
+.industrial-ops-v2 .ops-blueprint h3,
+.industrial-ops-v2 .ops-blueprint [class*="tracking-[0.22em]"],
+.industrial-ops-v2 .ops-blueprint [class*="tracking-[0.18em]"] {
+  font-family: "IBM Plex Mono", "Aptos Mono", "SFMono-Regular", Menlo, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.industrial-ops-v2 .ops-blueprint section[class*="rounded-2xl"],
+.industrial-ops-v2 .ops-blueprint div[class*="rounded-2xl"][class*="border"],
+.industrial-ops-v2 .ops-blueprint div[class*="rounded-xl"][class*="border"] {
+  position: relative;
+  overflow: hidden;
+  border-color: rgba(161, 161, 170, 0.6) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    0 16px 28px rgba(0, 0, 0, 0.38);
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 18px 18px;
+}
+
+.industrial-ops-v2 .ops-blueprint section[class*="rounded-2xl"]::before,
+.industrial-ops-v2 .ops-blueprint div[class*="rounded-2xl"][class*="border"]::before,
+.industrial-ops-v2 .ops-blueprint div[class*="rounded-xl"][class*="border"]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(#d9ff64, #d9ff64) left 8px top 8px / 16px 1px no-repeat,
+    linear-gradient(#d9ff64, #d9ff64) left 8px top 8px / 1px 16px no-repeat,
+    linear-gradient(#d9ff64, #d9ff64) right 8px top 8px / 16px 1px no-repeat,
+    linear-gradient(#d9ff64, #d9ff64) right 8px top 8px / 1px 16px no-repeat,
+    linear-gradient(#d9ff64, #d9ff64) left 8px bottom 8px / 16px 1px no-repeat,
+    linear-gradient(#d9ff64, #d9ff64) left 8px bottom 8px / 1px 16px no-repeat,
+    linear-gradient(#d9ff64, #d9ff64) right 8px bottom 8px / 16px 1px no-repeat,
+    linear-gradient(#d9ff64, #d9ff64) right 8px bottom 8px / 1px 16px no-repeat;
+  opacity: 0.45;
+}
+
+.industrial-ops-v2 .ops-blueprint section[class*="rounded-2xl"]::after,
+.industrial-ops-v2 .ops-blueprint div[class*="rounded-2xl"][class*="border"]::after,
+.industrial-ops-v2 .ops-blueprint div[class*="rounded-xl"][class*="border"]::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    -28deg,
+    transparent 0 10px,
+    rgba(255, 255, 255, 0.03) 10px 11px
+  );
+  opacity: 0.38;
+}
+
+.industrial-ops-v2 .ops-dotmatrix {
+  position: relative;
+  font-family: "IBM Plex Mono", "Aptos Mono", "SFMono-Regular", Menlo, monospace;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #f8fafc;
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.25);
+}
+
+.industrial-ops-v2 .ops-dotmatrix::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.32) 0.65px, transparent 0.8px);
+  background-size: 2.5px 2.5px;
+  mix-blend-mode: multiply;
+  opacity: 0.42;
+  pointer-events: none;
+}
+
+.industrial-ops-v2 .ops-nameplate {
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.05),
+    0 12px 24px rgba(0, 0, 0, 0.35);
+}
+
+.industrial-ops-v2 .ops-flag {
+  position: relative;
+  width: 28px;
+  height: 18px;
+  border: 1px solid rgba(244, 244, 245, 0.5);
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      #f5f5f5 0 1px,
+      transparent 1px 2px
+    );
+}
+
+.industrial-ops-v2 .ops-flag-stars {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 12px;
+  height: 8px;
+  background: rgba(244, 244, 245, 0.2);
+  border-right: 1px solid rgba(244, 244, 245, 0.4);
+  border-bottom: 1px solid rgba(244, 244, 245, 0.4);
+}
+
+/* Baseload specification-sheet mode */
+.industrial-spec {
+  background:
+    radial-gradient(circle at 10% 8%, rgba(255, 255, 255, 0.12), transparent 30%),
+    radial-gradient(circle at 82% 14%, rgba(190, 242, 100, 0.12), transparent 26%),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 255, 255, 0.025) 0,
+      rgba(255, 255, 255, 0.025) 1px,
+      transparent 1px,
+      transparent 22px
+    ),
+    #060606;
+  color: #f4f4f5;
+  font-family: "IBM Plex Mono", "Aptos Mono", "SFMono-Regular", Menlo, Consolas, monospace;
+}
+
+.industrial-spec .spec-block {
+  position: relative;
+  border: 1px solid rgba(161, 161, 170, 0.65);
+  background: rgba(7, 7, 7, 0.74);
+  backdrop-filter: blur(1.5px);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+}
+
+.industrial-spec .spec-global-watermark {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  color: rgba(228, 228, 231, 0.74);
+  opacity: 0.48;
+}
+
+.industrial-spec .spec-global-watermark::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 15% 30%, rgba(255, 255, 255, 0.24), transparent 26%),
+    radial-gradient(circle at 78% 34%, rgba(190, 242, 100, 0.2), transparent 24%),
+    repeating-linear-gradient(
+      -30deg,
+      transparent 0 16px,
+      rgba(255, 255, 255, 0.065) 16px 17px
+    );
+}
+
+.industrial-spec .spec-eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #e4e4e7;
+}
+
+.industrial-spec .spec-title {
+  font-size: clamp(1.4rem, 3.2vw, 2.2rem);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #fafafa;
+}
+
+.industrial-spec .spec-subtitle {
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+}
+
+.industrial-spec .spec-status {
+  border: 1px solid rgba(190, 242, 100, 0.6);
+  color: #d9f99d;
+  background: rgba(190, 242, 100, 0.08);
+  padding: 0.5rem 0.7rem;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.industrial-spec .spec-link {
+  border: 1px solid rgba(113, 113, 122, 0.8);
+  background: rgba(10, 10, 10, 0.9);
+  color: #e4e4e7;
+  padding: 0.5rem 0.7rem;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.industrial-spec .spec-link:hover {
+  border-color: rgba(190, 242, 100, 0.6);
+}
+
+.industrial-spec .spec-section-label {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #d4d4d8;
+  border-bottom: 1px solid rgba(113, 113, 122, 0.8);
+  padding-bottom: 0.5rem;
+}
+
+.industrial-spec .spec-body {
+  font-size: 13px;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  color: #e4e4e7;
+}
+
+.industrial-spec .spec-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0;
+  border: 1px solid rgba(113, 113, 122, 0.8);
+}
+
+.industrial-spec .spec-list li {
+  border-bottom: 1px solid rgba(113, 113, 122, 0.5);
+  padding: 0.55rem 0.65rem;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  background: rgba(8, 8, 8, 0.86);
+}
+
+.industrial-spec .spec-list li:last-child {
+  border-bottom: 0;
+}
+
+.industrial-spec .spec-cell-label {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #a1a1aa;
+}
+
+.industrial-spec .spec-cell-value {
+  font-size: 15px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: #f4f4f5;
+}
+
+.industrial-spec .spec-table-title {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: #d4d4d8;
+}
+
+.industrial-spec .spec-diagram {
+  border: 1px solid rgba(113, 113, 122, 0.85);
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    #070707;
+  background-size: 22px 22px;
+  height: 250px;
+}
+
+.industrial-spec .spec-svg-text {
+  font-family: "IBM Plex Mono", "SFMono-Regular", Menlo, monospace;
+  font-size: 16px;
+  fill: rgba(228, 228, 231, 0.95);
+  letter-spacing: 0.08em;
+}
+
+.industrial-spec .spec-svg-text-diagram {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+}
+
+.industrial-spec .spec-flag {
+  display: inline-block;
+  width: 30px;
+  height: 18px;
+  border: 1px solid rgba(244, 244, 245, 0.7);
+  background:
+    linear-gradient(90deg, rgba(244, 244, 245, 0.2) 0 38%, transparent 38% 100%),
+    repeating-linear-gradient(to bottom, rgba(244, 244, 245, 0.95) 0 1px, transparent 1px 2px);
+}
+
+.industrial-spec .spec-visual-panel {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(113, 113, 122, 0.85);
+  background:
+    linear-gradient(to right, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    #080808;
+  background-size: 18px 18px;
+  padding: 0.75rem;
+  color: rgba(228, 228, 231, 0.88);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    inset 0 -10px 20px rgba(0, 0, 0, 0.35);
+}
+
+.industrial-spec .spec-visual-panel::before {
+  content: "";
+  position: absolute;
+  top: -30%;
+  bottom: -30%;
+  width: 16%;
+  left: -24%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(190, 242, 100, 0.12),
+    rgba(255, 255, 255, 0.2),
+    rgba(190, 242, 100, 0.12),
+    transparent
+  );
+  transform: skewX(-20deg);
+  animation: specPanelScan 7.8s linear infinite;
+}
+
+.industrial-spec .spec-wire-shadow {
+  color: rgba(255, 255, 255, 0.12);
+  transform: translate(5px, -4px);
+}
+
+.industrial-spec .spec-wire-main {
+  color: rgba(228, 228, 231, 0.92);
+}
+
+.industrial-spec .spec-node-pulse {
+  animation: specNodePulse 3.2s ease-in-out infinite;
+  transform-origin: center;
+}
+
+.industrial-spec .spec-table-surface {
+  border: 1px solid rgba(157, 184, 225, 0.34);
+  background: rgba(8, 12, 18, 0.82);
+}
+
+.industrial-spec .spec-metric-grid {
+  background: rgba(157, 184, 225, 0.28);
+}
+
+.industrial-spec .spec-metric-cell {
+  background: rgba(8, 12, 18, 0.9);
+}
+
+@keyframes specPanelScan {
+  0% {
+    left: -24%;
+    opacity: 0;
+  }
+  12% {
+    opacity: 0.38;
+  }
+  58% {
+    opacity: 0.22;
+  }
+  100% {
+    left: 122%;
+    opacity: 0;
+  }
+}
+
+@keyframes specNodePulse {
+  0%,
+  100% {
+    opacity: 0.72;
+    filter: drop-shadow(0 0 0 rgba(190, 242, 100, 0));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 2px rgba(190, 242, 100, 0.6));
+  }
 }
