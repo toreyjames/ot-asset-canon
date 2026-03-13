@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { setAccessState } from "@/lib/access";
 
@@ -15,6 +15,12 @@ export default function AuthPage() {
   const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [returnTo, setReturnTo] = useState("/industrial-tracker");
+
+  useEffect(() => {
+    const next = new URLSearchParams(window.location.search).get("returnTo");
+    if (next?.trim()) setReturnTo(next);
+  }, []);
 
   function handleAuth() {
     if (!email.trim() || !password.trim()) return;
@@ -25,18 +31,18 @@ export default function AuthPage() {
       company: company.trim() || undefined,
       email: email.trim(),
     });
-    router.push("/inventory");
+    router.push(returnTo);
   }
 
   return (
     <div className="min-h-screen bg-[#050915] text-slate-100 px-4 py-12">
       <div className="max-w-md mx-auto rounded-2xl border border-slate-700/70 bg-slate-900/80 p-6">
-        <div className="text-xs uppercase tracking-wide text-cyan-300">PlantTrace Access</div>
+        <div className="text-xs uppercase tracking-wide text-cyan-300">Baseload Access</div>
         <h1 className="mt-2 text-3xl font-semibold">
           {mode === "signin" ? "Sign In" : "Create Account"}
         </h1>
         <p className="mt-2 text-sm text-slate-300">
-          Demo viewing is public. Sign in to save runs, export results, and keep site history.
+          Sign in to save assessments, manage opportunities, and keep team workspace history.
         </p>
 
         <div className="mt-5 space-y-2">
