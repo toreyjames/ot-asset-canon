@@ -756,7 +756,7 @@ export default function InventoryPage() {
         <div className="mb-5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 p-4">
           <div className="text-xs uppercase tracking-wide text-cyan-200">Facility Reality Gap</div>
           <div className="mt-1 text-sm text-slate-100">
-            Difference between documented infrastructure and operational reality. PlantTrace closes this gap in measurable steps.
+            Difference between documented infrastructure and operational reality. Mission Map closes this gap in measurable steps.
           </div>
         </div>
 

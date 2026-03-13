@@ -11,7 +11,7 @@ export default function PlantTraceLogo({ compact = false }: { compact?: boolean 
       </svg>
       {!compact && (
         <div>
-          <div className="font-semibold text-lg tracking-tight text-white">PlantTrace</div>
+          <div className="font-semibold text-lg tracking-tight text-white">Mission Map</div>
           <div className="text-[11px] uppercase tracking-wide text-slate-400">Asset Assurance</div>
         </div>
       )}

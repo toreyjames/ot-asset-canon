@@ -57,7 +57,7 @@ export default async function IndustrialTrackerFacilityPage({
               href="/planttrace"
               className="rounded-md border border-slate-700 px-3 py-2 text-sm hover:border-emerald-400/60"
             >
-              PlantTrace
+              Mission Map
             </Link>
           </div>
         </header>

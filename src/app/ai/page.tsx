@@ -142,7 +142,7 @@ function AIQueryPageInner() {
                     style={{ animationDelay: "0.2s" }}
                   />
                 </div>
-                <span className="text-sm">Analyzing PlantTrace data...</span>
+                <span className="text-sm">Analyzing Mission Map data...</span>
               </div>
             )}
             <div ref={messagesEndRef} />
@@ -175,10 +175,10 @@ function AIQueryPageInner() {
           Available Tools
         </h4>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
-          <ToolBadge name="searchAssets" category="PlantTrace" />
-          <ToolBadge name="getAssetRelationships" category="PlantTrace" />
-          <ToolBadge name="getAttackPaths" category="PlantTrace" />
-          <ToolBadge name="getConsequenceChain" category="PlantTrace" />
+          <ToolBadge name="searchAssets" category="Mission Map" />
+          <ToolBadge name="getAssetRelationships" category="Mission Map" />
+          <ToolBadge name="getAttackPaths" category="Mission Map" />
+          <ToolBadge name="getConsequenceChain" category="Mission Map" />
           <ToolBadge name="adiabaticTemperatureRise" category="Thermo" />
           <ToolBadge name="timeToMaximumRate" category="Thermo" />
           <ToolBadge name="reliefValveSizing" category="Fluid" />
@@ -241,7 +241,7 @@ function MessageBubble({ message }: { message: Message }) {
 
 function ToolBadge({ name, category }: { name: string; category: string }) {
   const categoryColors: Record<string, string> = {
-    PlantTrace: "bg-layer5/20 text-layer5",
+    "Mission Map": "bg-layer5/20 text-layer5",
     Thermo: "bg-layer1/20 text-layer1",
     Fluid: "bg-layer2/20 text-layer2",
     Consequence: "bg-layer3/20 text-layer3",

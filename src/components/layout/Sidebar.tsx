@@ -119,7 +119,7 @@ export default function Sidebar({ siteSlug, siteName }: SidebarProps) {
           <BaseloadLogo href="/" compact accent="dark" />
           <div className="text-right">
             <div className="text-[11px] font-medium uppercase tracking-[0.2em] text-slate-400">Module</div>
-            <div className="text-sm font-semibold text-slate-900">PlantTrace</div>
+            <div className="text-sm font-semibold text-slate-900">Mission Map</div>
           </div>
         </div>
       </div>

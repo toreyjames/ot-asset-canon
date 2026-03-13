@@ -41,7 +41,7 @@ export default function RoiPage() {
   return (
     <div className="min-h-screen bg-[#060b16] text-slate-100">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-        <h1 className="text-4xl font-semibold tracking-tight">PlantTrace ROI Model</h1>
+        <h1 className="text-4xl font-semibold tracking-tight">Mission Map ROI Model</h1>
         <p className="mt-3 text-slate-300 max-w-3xl">
           Estimate ROI by plant count and asset scope. This model quantifies wasted work and waste avoidance:
           labor recovered, outage exposure reduced, and CMDB/data rework eliminated.
@@ -95,7 +95,7 @@ export default function RoiPage() {
               <Stat label="Outage Avoidance" value={formatMoney(calc.annualOutageSavings)} />
               <Stat label="Rework Avoidance" value={formatMoney(calc.annualReworkSavings)} />
               <Stat label="Gross Benefit" value={formatMoney(calc.annualGrossBenefit)} accent />
-              <Stat label="PlantTrace Cost" value={formatMoney(calc.annualCost)} />
+              <Stat label="Mission Map Cost" value={formatMoney(calc.annualCost)} />
               <Stat label="Net Annual Value" value={formatMoney(calc.netAnnualValue)} accent />
             </div>
 

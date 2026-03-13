@@ -421,7 +421,7 @@ export default function IngestPage() {
             <div className="inline-flex rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
               Guided Demo Run
             </div>
-            <h1 className="mt-3 text-3xl font-semibold text-white">Running PlantTrace Demo</h1>
+            <h1 className="mt-3 text-3xl font-semibold text-white">Running Mission Map Demo</h1>
             <p className="mt-2 text-slate-300">
               This flow is automatic. We generate demo records, run the data gathering pipeline, then open Inventory.
             </p>
@@ -491,10 +491,10 @@ export default function IngestPage() {
         </div>
         <h1 className="mt-3 text-3xl font-semibold text-slate-100">Data Gathering Agent</h1>
         <p className="mt-2 text-slate-300">
-          Upload once. PlantTrace handles source ingestion, normalization, identity resolution, and publish.
+          Upload once. Mission Map handles source ingestion, normalization, identity resolution, and publish.
         </p>
         <div className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
-          OT Safety Notice: PlantTrace is data-only in this workflow. It does not write to control systems,
+          OT Safety Notice: Mission Map is data-only in this workflow. It does not write to control systems,
           change setpoints, modify PLC logic, or impact live process operations.
         </div>
         <div className="mt-4 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
