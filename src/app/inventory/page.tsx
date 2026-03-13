@@ -727,7 +727,7 @@ export default function InventoryPage() {
             </span>
           ) : (
             <Link
-              href="/auth"
+              href="/auth?returnTo=/inventory"
               className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-1.5 text-xs text-amber-200 hover:bg-amber-500/20"
             >
               Sign in to save runs, export data, and keep history
@@ -867,7 +867,7 @@ export default function InventoryPage() {
             </button>
           ) : (
             <Link
-              href="/auth"
+              href="/auth?returnTo=/inventory"
               className="rounded-md border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs text-slate-400 hover:border-cyan-400/60"
             >
               Sign in to export

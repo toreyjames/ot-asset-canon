@@ -15,11 +15,16 @@ export default function AuthPage() {
   const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [returnTo, setReturnTo] = useState("/industrial-tracker");
+  const [returnTo, setReturnTo] = useState("/industrial-tracker/coverage");
 
   useEffect(() => {
     const next = new URLSearchParams(window.location.search).get("returnTo");
-    if (next?.trim()) setReturnTo(next);
+    if (!next?.trim()) return;
+    if (next === "/" || next === "/auth" || next === "/login" || next === "/industrial-tracker") {
+      setReturnTo("/industrial-tracker/coverage");
+      return;
+    }
+    setReturnTo(next);
   }, []);
 
   function handleAuth() {
@@ -44,6 +49,7 @@ export default function AuthPage() {
         <p className="spec-body mt-2 text-sm">
           Sign in to save assessments, manage opportunities, and keep team workspace history.
         </p>
+        <p className="mt-2 text-xs text-zinc-400">Post-login destination: Internal Coverage dashboard.</p>
 
         <div className="mt-5 space-y-2">
           <button

@@ -26,7 +26,7 @@ export default function PlantTracePage() {
         <header className="flex items-center justify-between gap-4">
           <BaseloadLogo href="/" />
           <Link
-            href="/auth"
+            href="/auth?returnTo=/inventory"
             className="rounded-md border border-slate-700 px-3 py-2 text-sm hover:border-cyan-400/60"
           >
             Login
