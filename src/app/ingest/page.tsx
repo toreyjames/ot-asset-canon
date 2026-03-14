@@ -67,6 +67,15 @@ interface HybridDemoResponse {
   }[];
 }
 
+interface ActionLogEntry {
+  at: string;
+  action: string;
+  status: "info" | "success" | "error";
+  details?: string;
+}
+
+const ACTION_LOG_KEY = "baseload:ingest_action_log";
+
 const PACK_DEFAULTS: Record<
   DemoPackOption,
   { scope: OperatingScope; sources: IngestionSource[] }
@@ -132,6 +141,19 @@ export default function IngestPage() {
   const [boundarySaving, setBoundarySaving] = useState(false);
   const [boundaryMessage, setBoundaryMessage] = useState<string | null>(null);
   const [setupStep, setSetupStep] = useState<1 | 2 | 3 | 4>(1);
+  const [stepGateError, setStepGateError] = useState<string | null>(null);
+  const [actionLog, setActionLog] = useState<ActionLogEntry[]>([]);
+
+  const pushAction = (action: string, status: ActionLogEntry["status"] = "info", details?: string) => {
+    const entry: ActionLogEntry = { at: new Date().toISOString(), action, status, details };
+    setActionLog((prev) => {
+      const next = [entry, ...prev].slice(0, 200);
+      if (typeof window !== "undefined") {
+        window.sessionStorage.setItem(ACTION_LOG_KEY, JSON.stringify(next));
+      }
+      return next;
+    });
+  };
 
   useEffect(() => {
     if (!isLoading) return;
@@ -140,6 +162,18 @@ export default function IngestPage() {
     }, 900);
     return () => clearInterval(timer);
   }, [isLoading]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.sessionStorage.getItem(ACTION_LOG_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as ActionLogEntry[];
+      if (Array.isArray(parsed)) setActionLog(parsed);
+    } catch {
+      // ignore parse issues for action log hydration
+    }
+  }, []);
 
   const sources: { value: IngestionSource; label: string; description: string }[] = [
     { value: "claroty", label: "Claroty", description: "OT discovery export" },
@@ -183,8 +217,64 @@ export default function IngestPage() {
     "P&ID or line index reference map",
   ];
 
+  const validateStep = (step: 1 | 2 | 3 | 4): string | null => {
+    if (step === 1) {
+      const normalized = orgSlug.trim().toLowerCase();
+      if (!normalized) return "Organization slug is required.";
+      if (!boundaryPolicy) return "Data boundary must be loaded/saved before continuing.";
+      if ((boundaryPolicy.orgSlug || "").toLowerCase() !== normalized) return "Data boundary org must match the current org slug.";
+      if (boundaryPolicy.mode !== boundaryMode) return "Boundary mode changed. Save Data Boundary before continuing.";
+      return null;
+    }
+
+    if (step === 2) {
+      if (!deploymentMode || !operatingScope) return "Deployment mode and operating scope must be selected.";
+      return null;
+    }
+
+    if (step === 3) {
+      if (sourceBundle.length === 0) return "Select at least one source in Source Bundle.";
+      if (!sourceBundle.includes(uploadSource)) return "Upload source must be one of the selected bundle sources.";
+      return null;
+    }
+
+    if (step === 4) {
+      if (!file) return "A data file is required.";
+      return null;
+    }
+
+    return null;
+  };
+
+  const goToStep = (target: 1 | 2 | 3 | 4) => {
+    if (target <= setupStep) {
+      setSetupStep(target);
+      setStepGateError(null);
+      pushAction("Navigate step", "info", `Moved to step ${target}`);
+      return;
+    }
+
+    const gateError = validateStep(setupStep);
+    if (gateError) {
+      setStepGateError(gateError);
+      pushAction("Step gate blocked", "error", `Step ${setupStep} -> ${target}: ${gateError}`);
+      return;
+    }
+
+    setStepGateError(null);
+    setSetupStep(target);
+    pushAction("Step gate passed", "success", `Step ${setupStep} -> ${target}`);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const stepFourError = validateStep(4);
+    if (stepFourError) {
+      setStepGateError(stepFourError);
+      pushAction("Run blocked", "error", stepFourError);
+      return;
+    }
+    setStepGateError(null);
     if (sourceBundle.length === 0) {
       setSourceBundle([uploadSource || "manual"]);
     }
@@ -193,6 +283,7 @@ export default function IngestPage() {
     if (!selectedFile) return;
 
     setIsLoading(true);
+    pushAction("Run started", "info", `Source=${uploadSource} Org=${orgSlug.trim().toLowerCase()}`);
     setStepIndex(0);
     setError(null);
     setResult(null);
@@ -213,8 +304,14 @@ export default function IngestPage() {
 
       setResult(data);
       setStepIndex(AGENT_STEPS.length - 1);
+      pushAction(
+        "Run completed",
+        "success",
+        `Created=${data.assetsCreated ?? 0} Updated=${data.assetsUpdated ?? 0}`
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
+      pushAction("Run failed", "error", err instanceof Error ? err.message : "Unknown error");
     } finally {
       setIsLoading(false);
     }
@@ -225,6 +322,7 @@ export default function IngestPage() {
     if (!normalized) return;
     setBoundaryLoading(true);
     setBoundaryMessage(null);
+    pushAction("Boundary policy load", "info", normalized);
     try {
       const response = await fetch(
         `/api/assessment/data-boundary?org=${encodeURIComponent(normalized)}`
@@ -233,8 +331,10 @@ export default function IngestPage() {
       if (!response.ok || !data?.policy) throw new Error(data.error || "Failed to load");
       setBoundaryPolicy(data.policy);
       setBoundaryMode(data.policy.mode);
+      pushAction("Boundary policy loaded", "success", `${data.policy.orgSlug || "n/a"} · ${data.policy.mode}`);
     } catch (err) {
       setBoundaryMessage(err instanceof Error ? err.message : "Unable to load policy");
+      pushAction("Boundary policy load failed", "error", err instanceof Error ? err.message : "Unable to load policy");
     } finally {
       setBoundaryLoading(false);
     }
@@ -245,6 +345,7 @@ export default function IngestPage() {
     if (!normalized) return;
     setBoundarySaving(true);
     setBoundaryMessage(null);
+    pushAction("Boundary policy save", "info", `${normalized} · ${boundaryMode}`);
     try {
       const response = await fetch("/api/assessment/data-boundary", {
         method: "POST",
@@ -255,8 +356,10 @@ export default function IngestPage() {
       if (!response.ok || !data?.policy) throw new Error(data.error || "Failed to save");
       setBoundaryPolicy(data.policy);
       setBoundaryMessage("Data boundary saved.");
+      pushAction("Boundary policy saved", "success", `${data.policy.orgSlug || "n/a"} · ${data.policy.mode}`);
     } catch (err) {
       setBoundaryMessage(err instanceof Error ? err.message : "Unable to save policy");
+      pushAction("Boundary policy save failed", "error", err instanceof Error ? err.message : "Unable to save policy");
     } finally {
       setBoundarySaving(false);
     }
@@ -516,7 +619,7 @@ export default function IngestPage() {
                   <button
                     key={label}
                     type="button"
-                    onClick={() => setSetupStep(idx as 1 | 2 | 3 | 4)}
+                    onClick={() => goToStep(idx as 1 | 2 | 3 | 4)}
                     className={`rounded-md border px-2 py-1 text-[11px] ${
                       setupStep === idx
                         ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
@@ -528,6 +631,12 @@ export default function IngestPage() {
                 ))}
               </div>
             </div>
+
+            {stepGateError && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-xs text-amber-200">
+                Step check: {stepGateError}
+              </div>
+            )}
 
             {setupStep === 1 && (
               <div className="space-y-4">
@@ -549,19 +658,28 @@ export default function IngestPage() {
                       title="Customer Agent"
                       body="Raw data stays customer-side"
                       active={boundaryMode === "customer_agent"}
-                      onClick={() => setBoundaryMode("customer_agent")}
+                      onClick={() => {
+                        setBoundaryMode("customer_agent");
+                        pushAction("Boundary mode selected", "info", "customer_agent");
+                      }}
                     />
                     <ModeCard
                       title="Customer Cloud"
                       body="Cloud model, metadata-first"
                       active={boundaryMode === "customer_cloud"}
-                      onClick={() => setBoundaryMode("customer_cloud")}
+                      onClick={() => {
+                        setBoundaryMode("customer_cloud");
+                        pushAction("Boundary mode selected", "info", "customer_cloud");
+                      }}
                     />
                     <ModeCard
                       title="Hosted Pilot"
                       body="Hosted storage pilot gates"
                       active={boundaryMode === "hosted_pilot"}
-                      onClick={() => setBoundaryMode("hosted_pilot")}
+                      onClick={() => {
+                        setBoundaryMode("hosted_pilot");
+                        pushAction("Boundary mode selected", "info", "hosted_pilot");
+                      }}
                     />
                   </div>
                   <div className="mt-3 flex flex-wrap gap-2">
@@ -604,7 +722,7 @@ export default function IngestPage() {
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    onClick={() => setSetupStep(2)}
+                    onClick={() => goToStep(2)}
                     disabled={!orgSlug.trim()}
                     className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
                   >
@@ -623,13 +741,19 @@ export default function IngestPage() {
                       title="Customer Cloud"
                       body="Runs in customer tenant"
                       active={deploymentMode === "customer_cloud"}
-                      onClick={() => setDeploymentMode("customer_cloud")}
+                      onClick={() => {
+                        setDeploymentMode("customer_cloud");
+                        pushAction("Deployment mode selected", "info", "customer_cloud");
+                      }}
                     />
                     <ModeCard
                       title="Hybrid Connector"
                       body="Plant-side gather + cloud orchestration"
                       active={deploymentMode === "hybrid_connector"}
-                      onClick={() => setDeploymentMode("hybrid_connector")}
+                      onClick={() => {
+                        setDeploymentMode("hybrid_connector");
+                        pushAction("Deployment mode selected", "info", "hybrid_connector");
+                      }}
                     />
                   </div>
                 </div>
@@ -641,19 +765,28 @@ export default function IngestPage() {
                       title="Single Plant"
                       body="One facility baseline"
                       active={operatingScope === "single_plant"}
-                      onClick={() => setOperatingScope("single_plant")}
+                      onClick={() => {
+                        setOperatingScope("single_plant");
+                        pushAction("Operating scope selected", "info", "single_plant");
+                      }}
                     />
                     <ModeCard
                       title="Company Portfolio"
                       body="Multi-plant under one owner"
                       active={operatingScope === "company_portfolio"}
-                      onClick={() => setOperatingScope("company_portfolio")}
+                      onClick={() => {
+                        setOperatingScope("company_portfolio");
+                        pushAction("Operating scope selected", "info", "company_portfolio");
+                      }}
                     />
                     <ModeCard
                       title="Multi-Tenant"
                       body="Tenant-separated operations"
                       active={operatingScope === "multi_tenant"}
-                      onClick={() => setOperatingScope("multi_tenant")}
+                      onClick={() => {
+                        setOperatingScope("multi_tenant");
+                        pushAction("Operating scope selected", "info", "multi_tenant");
+                      }}
                     />
                   </div>
                 </div>
@@ -661,14 +794,14 @@ export default function IngestPage() {
                 <div className="flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => setSetupStep(1)}
+                    onClick={() => goToStep(1)}
                     className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
                   >
                     Back
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSetupStep(3)}
+                    onClick={() => goToStep(3)}
                     className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
                   >
                     Next: Source Bundle
@@ -682,22 +815,24 @@ export default function IngestPage() {
                 <div>
                   <div className="text-xs text-slate-400 mb-2">Source Bundle (What You Plan To Connect)</div>
                   <div className="mb-2 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSourceBundle(["claroty", "manual", "qualys"]);
-                        setUploadSource("claroty");
-                      }}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSourceBundle(["claroty", "manual", "qualys"]);
+                      setUploadSource("claroty");
+                      pushAction("Source bundle preset", "info", "Suggested Start Bundle");
+                    }}
                       className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
                     >
                       Suggested Start Bundle
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSourceBundle(["claroty"]);
-                        setUploadSource("claroty");
-                      }}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSourceBundle(["claroty"]);
+                      setUploadSource("claroty");
+                      pushAction("Source bundle preset", "info", "OT-Only");
+                    }}
                       className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
                     >
                       OT-Only (Not Recommended)
@@ -714,6 +849,11 @@ export default function IngestPage() {
                             setSourceBundle((prev) => {
                               const next = active ? prev.filter((x) => x !== s.value) : [...prev, s.value];
                               if (!next.includes(uploadSource) && next.length > 0) setUploadSource(next[0]);
+                              pushAction(
+                                active ? "Source removed" : "Source added",
+                                "info",
+                                `${s.value} · total=${next.length}`
+                              );
                               return next;
                             });
                           }}
@@ -741,7 +881,10 @@ export default function IngestPage() {
                         <button
                           key={`upload-${value}`}
                           type="button"
-                          onClick={() => setUploadSource(value)}
+                          onClick={() => {
+                            setUploadSource(value);
+                            pushAction("Upload source selected", "info", value);
+                          }}
                           className={`rounded-md border px-3 py-1.5 text-xs ${
                             uploadSource === value ? "border-cyan-400 bg-cyan-500/15 text-cyan-100" : "border-slate-700 bg-slate-950 text-slate-300"
                           }`}
@@ -775,14 +918,14 @@ export default function IngestPage() {
                 <div className="flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => setSetupStep(2)}
+                    onClick={() => goToStep(2)}
                     className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
                   >
                     Back
                   </button>
                   <button
                     type="button"
-                    onClick={() => setSetupStep(4)}
+                    onClick={() => goToStep(4)}
                     disabled={sourceBundle.length === 0}
                     className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
                   >
@@ -803,6 +946,12 @@ export default function IngestPage() {
                       onChange={(e) => {
                         setFile(e.target.files?.[0] || null);
                         setVirtualDemoFileName(null);
+                        const nextFile = e.target.files?.[0];
+                        pushAction(
+                          nextFile ? "File selected" : "File cleared",
+                          "info",
+                          nextFile ? `${nextFile.name} (${nextFile.size} bytes)` : undefined
+                        );
                       }}
                       className="hidden"
                     />
@@ -822,7 +971,10 @@ export default function IngestPage() {
                   <input
                     type="checkbox"
                     checked={autonomousRun}
-                    onChange={(e) => setAutonomousRun(e.target.checked)}
+                    onChange={(e) => {
+                      setAutonomousRun(e.target.checked);
+                      pushAction("Autonomous mode toggled", "info", e.target.checked ? "enabled" : "disabled");
+                    }}
                     className="h-4 w-4"
                   />
                   Autonomous pipeline mode (recommended)
@@ -834,7 +986,7 @@ export default function IngestPage() {
                 <div className="flex items-center justify-between gap-3">
                   <button
                     type="button"
-                    onClick={() => setSetupStep(3)}
+                    onClick={() => goToStep(3)}
                     className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
                   >
                     Back
@@ -912,6 +1064,50 @@ export default function IngestPage() {
               This agent is your product moat: repeatable ingestion, deterministic asset identity, and CMDB-ready outputs
               with less service effort per deployment.
             </p>
+          </div>
+
+          <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
+            <div className="flex items-center justify-between gap-2">
+              <div className="text-xs uppercase tracking-wide text-cyan-300">Action Log</div>
+              <button
+                type="button"
+                onClick={() => {
+                  setActionLog([]);
+                  if (typeof window !== "undefined") {
+                    window.sessionStorage.removeItem(ACTION_LOG_KEY);
+                  }
+                  pushAction("Action log cleared", "info");
+                }}
+                className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:border-cyan-400/60"
+              >
+                Clear
+              </button>
+            </div>
+            <div className="mt-3 max-h-52 space-y-2 overflow-auto pr-1">
+              {actionLog.length > 0 ? (
+                actionLog.slice(0, 30).map((entry, idx) => (
+                  <div key={`${entry.at}-${idx}`} className="rounded border border-slate-800 bg-slate-900/70 p-2 text-[11px]">
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={
+                          entry.status === "error"
+                            ? "text-rose-300"
+                            : entry.status === "success"
+                            ? "text-emerald-300"
+                            : "text-slate-200"
+                        }
+                      >
+                        {entry.action}
+                      </span>
+                      <span className="text-slate-500">{new Date(entry.at).toLocaleTimeString()}</span>
+                    </div>
+                    {entry.details ? <div className="mt-1 text-slate-400">{entry.details}</div> : null}
+                  </div>
+                ))
+              ) : (
+                <div className="text-xs text-slate-500">No actions logged yet.</div>
+              )}
+            </div>
           </div>
 
           {allowDemoTools ? (
