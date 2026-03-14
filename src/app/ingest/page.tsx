@@ -216,6 +216,13 @@ export default function IngestPage() {
     "Facility zone map or coordinates",
     "P&ID or line index reference map",
   ];
+  const mapFormationStage = result ? 4 : isLoading ? Math.max(3, setupStep) : setupStep;
+  const mapStages = [
+    { id: 1, label: "Org Boundary" },
+    { id: 2, label: "Deployment Model" },
+    { id: 3, label: "Source Graph" },
+    { id: 4, label: "Canonical Map" },
+  ] as const;
 
   const validateStep = (step: 1 | 2 | 3 | 4): string | null => {
     if (step === 1) {
@@ -585,26 +592,26 @@ export default function IngestPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="mb-6">
-        <div className="inline-flex rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
-          Product-Led Self Deployment
-        </div>
-        <h1 className="mt-3 text-3xl font-semibold text-slate-100">Data Gathering Agent</h1>
-        <p className="mt-2 text-slate-300">
-          Upload once. Mission Map handles source ingestion, normalization, identity resolution, and publish.
-        </p>
-        <div className="mt-4 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-xs text-emerald-100">
-          OT Safety Notice: Mission Map is data-only in this workflow. It does not write to control systems,
-          change setpoints, modify PLC logic, or impact live process operations.
-        </div>
-        <div className="mt-4 rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-xs text-cyan-100">
-          Quick start: 1) Set org + data boundary 2) Select source bundle 3) Upload file 4) Start Data Gathering Agent.
-        </div>
-      </div>
+    <div className="industrial-spec min-h-screen bg-[#060606] text-zinc-100">
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 py-6 sm:px-6">
+        <header className="spec-block px-4 py-4 sm:px-6">
+          <p className="spec-eyebrow">Mission Map</p>
+          <h1 className="spec-title mt-2">Data Gathering Agent</h1>
+          <p className="spec-body mt-2 max-w-4xl">
+            Upload once. Mission Map handles source ingestion, normalization, identity resolution, and publish.
+          </p>
+          <div className="mt-3 grid gap-2 text-xs sm:grid-cols-2">
+            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-emerald-100">
+              OT Safety Notice: data-only workflow. No control-system writes.
+            </div>
+            <div className="rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-cyan-100">
+              1) Org+Boundary 2) Deployment 3) Source Bundle 4) File+Run
+            </div>
+          </div>
+        </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6">
-        <div className="rounded-2xl border border-slate-700/70 bg-slate-900/75 p-6">
+        <div className="mt-4 grid grid-cols-1 lg:grid-cols-[1.1fr_1fr] gap-6">
+          <div className="spec-block p-6">
           <h2 className="text-lg font-semibold text-white">Run Configuration</h2>
           <form onSubmit={handleSubmit} className="mt-5 space-y-5">
             <div className="rounded-md border border-slate-700 bg-slate-950/70 p-3">
@@ -1038,7 +1045,40 @@ export default function IngestPage() {
             )}
         </div>
 
-        <div className="rounded-2xl border border-slate-700/70 bg-slate-900/75 p-6">
+        <div className="spec-block p-6">
+          <div className="spec-section-label">Mission Map Formation</div>
+          <div className="mt-3 spec-visual-panel">
+            <svg viewBox="0 0 520 150" className="h-32 w-full">
+              <g fill="none" stroke="currentColor" strokeOpacity="0.75">
+                <line x1="70" y1="75" x2="450" y2="75" />
+                {[70, 196, 323, 450].map((x, i) => (
+                  <g key={x}>
+                    <circle
+                      cx={x}
+                      cy={75}
+                      r={mapFormationStage > i ? 16 : 12}
+                      fill={mapFormationStage > i ? "rgba(190,242,100,0.28)" : "rgba(161,161,170,0.16)"}
+                      stroke={mapFormationStage > i ? "rgba(190,242,100,0.85)" : "rgba(161,161,170,0.65)"}
+                    />
+                    <text x={x} y={116} textAnchor="middle" fontSize="10" fill="rgba(228,228,231,0.9)">
+                      {i + 1}
+                    </text>
+                  </g>
+                ))}
+              </g>
+            </svg>
+            <div className="mt-2 grid gap-2 text-[11px] sm:grid-cols-2">
+              {mapStages.map((stage) => (
+                <div key={stage.id} className="flex items-center justify-between rounded border border-zinc-700 bg-[#090909] px-2 py-1">
+                  <span className="text-zinc-300">{stage.label}</span>
+                  <span className={mapFormationStage >= stage.id ? "text-emerald-300" : "text-zinc-500"}>
+                    {mapFormationStage > stage.id ? "DONE" : mapFormationStage === stage.id ? "ACTIVE" : "PENDING"}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
           <h2 className="text-lg font-semibold text-white">Agent Pipeline</h2>
           <p className="mt-1 text-sm text-slate-400">What the platform executes for a hands-off deployment.</p>
 
@@ -1190,6 +1230,7 @@ export default function IngestPage() {
             )}
             </div>
           ) : null}
+        </div>
         </div>
       </div>
     </div>
