@@ -49,7 +49,7 @@ export default function IndustrialTrackerCoveragePage() {
               Tracker
             </Link>
             <Link
-              href={canView ? "/inventory" : "/auth?returnTo=/onboarding"}
+              href={canView ? "/inventory" : "/auth?returnTo=/console"}
               className="rounded-md border border-slate-700 px-3 py-2 text-sm hover:border-cyan-400/60"
             >
               {canView ? "Mission Map" : "Login"}
@@ -92,7 +92,7 @@ export default function IndustrialTrackerCoveragePage() {
                   This page is for Baseload operating visibility, not the public demo surface.
                 </p>
                 <Link
-                  href="/auth?returnTo=/onboarding"
+                  href="/auth?returnTo=/console"
                   className="mt-5 inline-flex rounded-md bg-cyan-400 px-4 py-2.5 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
                 >
                   Open access

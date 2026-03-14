@@ -15,13 +15,13 @@ export default function AuthPage() {
   const [role, setRole] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [returnTo, setReturnTo] = useState("/onboarding");
+  const [returnTo, setReturnTo] = useState("/console");
 
   useEffect(() => {
     const next = new URLSearchParams(window.location.search).get("returnTo");
     if (!next?.trim()) return;
     if (next === "/" || next === "/auth" || next === "/login" || next === "/industrial-tracker") {
-      setReturnTo("/onboarding");
+      setReturnTo("/console");
       return;
     }
     setReturnTo(next);
@@ -37,7 +37,7 @@ export default function AuthPage() {
       email: email.trim(),
     });
     const onboarding = getOnboardingState();
-    if (!onboarding.completed && returnTo !== "/inventory") {
+    if (!onboarding.completed && returnTo !== "/inventory" && returnTo !== "/console") {
       router.push("/onboarding");
       return;
     }
@@ -54,7 +54,7 @@ export default function AuthPage() {
         <p className="spec-body mt-2 text-sm">
           Sign in to save assessments, manage opportunities, and keep team workspace history.
         </p>
-        <p className="mt-2 text-xs text-zinc-400">Post-login destination: Client onboarding workspace.</p>
+        <p className="mt-2 text-xs text-zinc-400">Post-login destination: Baseload console.</p>
 
         <div className="mt-5 space-y-2">
           <button

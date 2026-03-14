@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
 export default function LoginPage() {
-  redirect("/auth?returnTo=/onboarding");
+  redirect("/auth?returnTo=/console");
 }

@@ -118,8 +118,8 @@ export default async function IndustrialTrackerPage() {
             </div>
             <div className="flex items-center gap-2">
               <span className="spec-status">STATUS: OPERATIONAL</span>
-              <Link href="/auth?returnTo=/onboarding" className="spec-link">
-                LOGIN
+              <Link href="/console" className="spec-link">
+                OPEN CONSOLE
               </Link>
             </div>
           </div>
