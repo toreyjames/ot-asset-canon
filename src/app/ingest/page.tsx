@@ -131,6 +131,7 @@ export default function IngestPage() {
   const [boundaryLoading, setBoundaryLoading] = useState(false);
   const [boundarySaving, setBoundarySaving] = useState(false);
   const [boundaryMessage, setBoundaryMessage] = useState<string | null>(null);
+  const [setupStep, setSetupStep] = useState<1 | 2 | 3 | 4>(1);
 
   useEffect(() => {
     if (!isLoading) return;
@@ -503,291 +504,353 @@ export default function IngestPage() {
         <div className="rounded-2xl border border-slate-700/70 bg-slate-900/75 p-6">
           <h2 className="text-lg font-semibold text-white">Run Configuration</h2>
           <form onSubmit={handleSubmit} className="mt-5 space-y-5">
-            <div>
-              <div className="text-xs text-slate-400 mb-2">Assessment Org</div>
-              <input
-                value={orgSlug}
-                onChange={(e) => setOrgSlug(e.target.value)}
-                className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
-                placeholder="tmna"
-              />
-              <p className="mt-1 text-[11px] text-slate-500">
-                Used to persist data-boundary policy for this org.
-              </p>
-            </div>
-
-            <div>
-              <div className="text-xs text-slate-400 mb-2">Data Boundary (Phase 0)</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <ModeCard
-                  title="Customer Agent"
-                  body="Raw data stays customer-side"
-                  active={boundaryMode === "customer_agent"}
-                  onClick={() => setBoundaryMode("customer_agent")}
-                />
-                <ModeCard
-                  title="Customer Cloud"
-                  body="Cloud model, metadata-first"
-                  active={boundaryMode === "customer_cloud"}
-                  onClick={() => setBoundaryMode("customer_cloud")}
-                />
-                <ModeCard
-                  title="Hosted Pilot"
-                  body="Hosted storage pilot gates"
-                  active={boundaryMode === "hosted_pilot"}
-                  onClick={() => setBoundaryMode("hosted_pilot")}
-                />
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={saveBoundaryPolicy}
-                  disabled={boundarySaving || boundaryLoading || !orgSlug.trim()}
-                  className="rounded-md border border-cyan-400/60 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-500/20 disabled:opacity-60"
-                >
-                  {boundarySaving ? "Saving..." : "Save Data Boundary"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => void loadBoundaryPolicy(orgSlug)}
-                  disabled={boundarySaving || boundaryLoading || !orgSlug.trim()}
-                  className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 hover:border-cyan-400/60 disabled:opacity-60"
-                >
-                  {boundaryLoading ? "Loading..." : "Refresh Policy"}
-                </button>
-              </div>
-              {boundaryMessage && (
-                <div className="mt-2 text-xs text-slate-300">{boundaryMessage}</div>
-              )}
-            </div>
-
-            <div className="rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs">
-              <div className="text-slate-200">Where Data Lives</div>
-              <div className="mt-2 text-slate-400">
-                Org: <span className="text-slate-200">{boundaryPolicy?.orgSlug || orgSlug || "n/a"}</span>
-              </div>
-              <div className="mt-1 text-slate-400">
-                Mode: <span className="text-slate-200">{boundaryPolicy?.mode || boundaryMode}</span>
-              </div>
-              <div className="mt-1 text-slate-400">
-                Raw upload storage: <span className="text-slate-200">{boundaryPolicy?.rawStorage || "metadata_only"}</span>
-              </div>
-              <div className="mt-1 text-slate-400">
-                Intake storage: <span className="text-slate-200">{boundaryPolicy?.intakeStorage || "metadata_only"}</span>
-              </div>
-              <div className="mt-1 text-slate-400">
-                Hosted raw enabled:{" "}
-                <span className={boundaryPolicy?.hostedRawUploadsEnabled ? "text-emerald-300" : "text-amber-300"}>
-                  {boundaryPolicy?.hostedRawUploadsEnabled ? "yes" : "no"}
-                </span>
-              </div>
-              <div className="mt-1 text-slate-400">
-                Hosted intake enabled:{" "}
-                <span className={boundaryPolicy?.hostedIntakeStorageEnabled ? "text-emerald-300" : "text-amber-300"}>
-                  {boundaryPolicy?.hostedIntakeStorageEnabled ? "yes" : "no"}
-                </span>
+            <div className="rounded-md border border-slate-700 bg-slate-950/70 p-3">
+              <div className="text-[11px] uppercase tracking-[0.16em] text-slate-400">Setup Progress</div>
+              <div className="mt-2 grid grid-cols-2 gap-2 md:grid-cols-4">
+                {[
+                  [1, "Org & Boundary"],
+                  [2, "Deployment"],
+                  [3, "Source Bundle"],
+                  [4, "File & Run"],
+                ].map(([idx, label]) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => setSetupStep(idx as 1 | 2 | 3 | 4)}
+                    className={`rounded-md border px-2 py-1 text-[11px] ${
+                      setupStep === idx
+                        ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                        : "border-slate-700 bg-slate-900 text-slate-400"
+                    }`}
+                  >
+                    {idx}. {label}
+                  </button>
+                ))}
               </div>
             </div>
 
-            <div>
-              <div className="text-xs text-slate-400 mb-2">Deployment Mode</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                <ModeCard
-                  title="Customer Cloud"
-                  body="Runs in customer tenant"
-                  active={deploymentMode === "customer_cloud"}
-                  onClick={() => setDeploymentMode("customer_cloud")}
-                />
-                <ModeCard
-                  title="Hybrid Connector"
-                  body="Plant-side gather + cloud orchestration"
-                  active={deploymentMode === "hybrid_connector"}
-                  onClick={() => setDeploymentMode("hybrid_connector")}
-                />
-              </div>
-            </div>
+            {setupStep === 1 && (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-slate-400 mb-2">Assessment Org</div>
+                  <input
+                    value={orgSlug}
+                    onChange={(e) => setOrgSlug(e.target.value)}
+                    className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                    placeholder="tmna"
+                  />
+                  <p className="mt-1 text-[11px] text-slate-500">Used to persist data-boundary policy for this org.</p>
+                </div>
 
-            <div>
-              <div className="text-xs text-slate-400 mb-2">Operating Scope</div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
-                <ModeCard
-                  title="Single Plant"
-                  body="One facility baseline"
-                  active={operatingScope === "single_plant"}
-                  onClick={() => setOperatingScope("single_plant")}
-                />
-                <ModeCard
-                  title="Company Portfolio"
-                  body="Multi-plant under one owner"
-                  active={operatingScope === "company_portfolio"}
-                  onClick={() => setOperatingScope("company_portfolio")}
-                />
-                <ModeCard
-                  title="Multi-Tenant"
-                  body="Tenant-separated operations"
-                  active={operatingScope === "multi_tenant"}
-                  onClick={() => setOperatingScope("multi_tenant")}
-                />
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs text-slate-400 mb-2">Source Bundle (What You Plan To Connect)</div>
-              <div className="mb-2 flex flex-wrap gap-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSourceBundle(["claroty", "manual", "qualys"]);
-                    setUploadSource("claroty");
-                  }}
-                  className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
-                >
-                  Suggested Start Bundle
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSourceBundle(["claroty"]);
-                    setUploadSource("claroty");
-                  }}
-                  className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
-                >
-                  OT-Only (Not Recommended)
-                </button>
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {sources.map((s) => {
-                  const active = sourceBundle.includes(s.value);
-                  return (
+                <div>
+                  <div className="text-xs text-slate-400 mb-2">Data Boundary (Phase 0)</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <ModeCard
+                      title="Customer Agent"
+                      body="Raw data stays customer-side"
+                      active={boundaryMode === "customer_agent"}
+                      onClick={() => setBoundaryMode("customer_agent")}
+                    />
+                    <ModeCard
+                      title="Customer Cloud"
+                      body="Cloud model, metadata-first"
+                      active={boundaryMode === "customer_cloud"}
+                      onClick={() => setBoundaryMode("customer_cloud")}
+                    />
+                    <ModeCard
+                      title="Hosted Pilot"
+                      body="Hosted storage pilot gates"
+                      active={boundaryMode === "hosted_pilot"}
+                      onClick={() => setBoundaryMode("hosted_pilot")}
+                    />
+                  </div>
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
-                      key={`bundle-${s.value}`}
+                      type="button"
+                      onClick={saveBoundaryPolicy}
+                      disabled={boundarySaving || boundaryLoading || !orgSlug.trim()}
+                      className="rounded-md border border-cyan-400/60 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-500/20 disabled:opacity-60"
+                    >
+                      {boundarySaving ? "Saving..." : "Save Data Boundary"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void loadBoundaryPolicy(orgSlug)}
+                      disabled={boundarySaving || boundaryLoading || !orgSlug.trim()}
+                      className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 hover:border-cyan-400/60 disabled:opacity-60"
+                    >
+                      {boundaryLoading ? "Loading..." : "Refresh Policy"}
+                    </button>
+                  </div>
+                  {boundaryMessage && <div className="mt-2 text-xs text-slate-300">{boundaryMessage}</div>}
+                </div>
+
+                <div className="rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs">
+                  <div className="text-slate-200">Where Data Lives</div>
+                  <div className="mt-2 text-slate-400">
+                    Org: <span className="text-slate-200">{boundaryPolicy?.orgSlug || orgSlug || "n/a"}</span>
+                  </div>
+                  <div className="mt-1 text-slate-400">
+                    Mode: <span className="text-slate-200">{boundaryPolicy?.mode || boundaryMode}</span>
+                  </div>
+                  <div className="mt-1 text-slate-400">
+                    Raw upload storage: <span className="text-slate-200">{boundaryPolicy?.rawStorage || "metadata_only"}</span>
+                  </div>
+                  <div className="mt-1 text-slate-400">
+                    Intake storage: <span className="text-slate-200">{boundaryPolicy?.intakeStorage || "metadata_only"}</span>
+                  </div>
+                </div>
+
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setSetupStep(2)}
+                    disabled={!orgSlug.trim()}
+                    className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
+                  >
+                    Next: Deployment
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {setupStep === 2 && (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-slate-400 mb-2">Deployment Mode</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                    <ModeCard
+                      title="Customer Cloud"
+                      body="Runs in customer tenant"
+                      active={deploymentMode === "customer_cloud"}
+                      onClick={() => setDeploymentMode("customer_cloud")}
+                    />
+                    <ModeCard
+                      title="Hybrid Connector"
+                      body="Plant-side gather + cloud orchestration"
+                      active={deploymentMode === "hybrid_connector"}
+                      onClick={() => setDeploymentMode("hybrid_connector")}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-400 mb-2">Operating Scope</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <ModeCard
+                      title="Single Plant"
+                      body="One facility baseline"
+                      active={operatingScope === "single_plant"}
+                      onClick={() => setOperatingScope("single_plant")}
+                    />
+                    <ModeCard
+                      title="Company Portfolio"
+                      body="Multi-plant under one owner"
+                      active={operatingScope === "company_portfolio"}
+                      onClick={() => setOperatingScope("company_portfolio")}
+                    />
+                    <ModeCard
+                      title="Multi-Tenant"
+                      body="Tenant-separated operations"
+                      active={operatingScope === "multi_tenant"}
+                      onClick={() => setOperatingScope("multi_tenant")}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setSetupStep(1)}
+                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSetupStep(3)}
+                    className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300"
+                  >
+                    Next: Source Bundle
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {setupStep === 3 && (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-slate-400 mb-2">Source Bundle (What You Plan To Connect)</div>
+                  <div className="mb-2 flex flex-wrap gap-2">
+                    <button
                       type="button"
                       onClick={() => {
-                        setSourceBundle((prev) => {
-                          const next = active ? prev.filter((x) => x !== s.value) : [...prev, s.value];
-                          if (!next.includes(uploadSource) && next.length > 0) {
-                            setUploadSource(next[0]);
-                          }
-                          return next;
-                        });
+                        setSourceBundle(["claroty", "manual", "qualys"]);
+                        setUploadSource("claroty");
                       }}
-                      className={`rounded-md border px-2.5 py-1.5 text-xs ${
-                        active
-                          ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
-                          : "border-slate-700 bg-slate-950 text-slate-300"
-                      }`}
+                      className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
                     >
-                      {s.label}
+                      Suggested Start Bundle
                     </button>
-                  );
-                })}
-              </div>
-              <p className="mt-2 text-xs text-slate-400">
-                Multi-source is supported. Add your expected sources first, then upload one file at a time and tag it correctly.
-              </p>
-            </div>
-
-            <div>
-              <div className="text-xs text-slate-400 mb-2">Upload This File As</div>
-              <div className="flex flex-wrap gap-2">
-                {sourceBundle.length === 0 && <div className="text-xs text-amber-300">Select at least one source in Source Bundle.</div>}
-                {sourceBundle.map((value) => {
-                  const label = sources.find((s) => s.value === value)?.label || value;
-                  return (
                     <button
-                      key={`upload-${value}`}
                       type="button"
-                      onClick={() => setUploadSource(value)}
-                      className={`rounded-md border px-3 py-1.5 text-xs ${
-                        uploadSource === value
-                          ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
-                          : "border-slate-700 bg-slate-950 text-slate-300"
-                      }`}
+                      onClick={() => {
+                        setSourceBundle(["claroty"]);
+                        setUploadSource("claroty");
+                      }}
+                      className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
                     >
-                      {label}
+                      OT-Only (Not Recommended)
                     </button>
-                  );
-                })}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {sources.map((s) => {
+                      const active = sourceBundle.includes(s.value);
+                      return (
+                        <button
+                          key={`bundle-${s.value}`}
+                          type="button"
+                          onClick={() => {
+                            setSourceBundle((prev) => {
+                              const next = active ? prev.filter((x) => x !== s.value) : [...prev, s.value];
+                              if (!next.includes(uploadSource) && next.length > 0) setUploadSource(next[0]);
+                              return next;
+                            });
+                          }}
+                          className={`rounded-md border px-2.5 py-1.5 text-xs ${
+                            active ? "border-cyan-400 bg-cyan-500/15 text-cyan-100" : "border-slate-700 bg-slate-950 text-slate-300"
+                          }`}
+                        >
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <p className="mt-2 text-xs text-slate-400">
+                    Multi-source is supported. Add expected sources first, then upload one file at a time and tag it correctly.
+                  </p>
+                </div>
+
+                <div>
+                  <div className="text-xs text-slate-400 mb-2">Upload This File As</div>
+                  <div className="flex flex-wrap gap-2">
+                    {sourceBundle.length === 0 && <div className="text-xs text-amber-300">Select at least one source in Source Bundle.</div>}
+                    {sourceBundle.map((value) => {
+                      const label = sources.find((s) => s.value === value)?.label || value;
+                      return (
+                        <button
+                          key={`upload-${value}`}
+                          type="button"
+                          onClick={() => setUploadSource(value)}
+                          className={`rounded-md border px-3 py-1.5 text-xs ${
+                            uploadSource === value ? "border-cyan-400 bg-cyan-500/15 text-cyan-100" : "border-slate-700 bg-slate-950 text-slate-300"
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs">
+                  <div className="text-slate-300">Model Readiness Checklist</div>
+                  <div className={hasOtCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
+                    {hasOtCoverage ? "OT discovery source selected" : "OT discovery source missing"}
+                  </div>
+                  <div className={hasEngineeringCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
+                    {hasEngineeringCoverage ? "Engineering source selected" : "Engineering input missing (tags/P&ID/facility layout expected)"}
+                  </div>
+                  <div className={hasNetworkCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
+                    {hasNetworkCoverage ? "Network/security source selected" : "Network context missing"}
+                  </div>
+                  <div className="mt-3 border-t border-slate-700 pt-2 text-slate-300">
+                    <div className="text-cyan-200 mb-1">Engineering suggestions for first-pass quality:</div>
+                    {suggestedEngineeringInputs.map((item) => (
+                      <div key={item}>• {item}</div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <button
+                    type="button"
+                    onClick={() => setSetupStep(2)}
+                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setSetupStep(4)}
+                    disabled={sourceBundle.length === 0}
+                    className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
+                  >
+                    Next: File & Run
+                  </button>
+                </div>
               </div>
-
-              <div className="mt-3 rounded-md border border-slate-700 bg-slate-950/70 p-3 text-xs">
-                <div className="text-slate-300">Model Readiness Checklist</div>
-                <div className={hasOtCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
-                  {hasOtCoverage ? "OT discovery source selected" : "OT discovery source missing"}
-                </div>
-                <div className={hasEngineeringCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
-                  {hasEngineeringCoverage
-                    ? "Engineering source selected"
-                    : "Engineering input missing (tags/P&ID/facility layout expected)"}
-                </div>
-                <div className={hasNetworkCoverage ? "text-emerald-300 mt-1" : "text-amber-300 mt-1"}>
-                  {hasNetworkCoverage ? "Network/security source selected" : "Network context missing"}
-                </div>
-                <div className="mt-3 border-t border-slate-700 pt-2 text-slate-300">
-                  <div className="text-cyan-200 mb-1">Engineering suggestions for first-pass quality:</div>
-                  {suggestedEngineeringInputs.map((item) => (
-                    <div key={item}>• {item}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div>
-              <div className="text-xs text-slate-400 mb-2">Data File</div>
-              <label className="block rounded-lg border-2 border-dashed border-slate-600 bg-slate-950/70 p-5 text-center cursor-pointer hover:border-cyan-500/60">
-                <input
-                  type="file"
-                  accept=".csv,.json"
-                  onChange={(e) => {
-                    setFile(e.target.files?.[0] || null);
-                    setVirtualDemoFileName(null);
-                  }}
-                  className="hidden"
-                />
-                {file ? (
-                  <span className="text-sm text-slate-100">{file.name}</span>
-                ) : virtualDemoFileName ? (
-                  <span className="text-sm text-emerald-200">
-                    Demo data staged as virtual file: {virtualDemoFileName}
-                  </span>
-                ) : (
-                  <span className="text-sm text-slate-300">Click to upload CSV/JSON</span>
-                )}
-              </label>
-              <p className="mt-2 text-xs text-slate-400">
-                If this file is engineering context, set <span className="text-slate-200">Upload This File As</span> to
-                <span className="text-slate-200"> Engineering / Facility File</span>.
-              </p>
-            </div>
-
-            <label className="flex items-center gap-2 text-sm text-slate-300">
-              <input
-                type="checkbox"
-                checked={autonomousRun}
-                onChange={(e) => setAutonomousRun(e.target.checked)}
-                className="h-4 w-4"
-              />
-              Autonomous pipeline mode (recommended)
-            </label>
-            <p className="-mt-3 text-xs text-slate-400">
-              Runs the full pipeline automatically: parse, normalize, dedupe, confidence scoring, and publish.
-            </p>
-
-            <button
-              type="submit"
-              disabled={!file || isLoading || demoRunLoading}
-              className="w-full rounded-md bg-cyan-400 px-4 py-3 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
-            >
-              {isLoading || demoRunLoading ? "Agent Running..." : "Start Data Gathering Agent"}
-            </button>
-            {!file && (
-              <p className="text-[11px] text-amber-300">
-                Upload a file to run this button.
-              </p>
             )}
-            <p className="text-[11px] text-slate-500">
-              Read-only collection only. No process control or logic writes.
-            </p>
+
+            {setupStep === 4 && (
+              <div className="space-y-4">
+                <div>
+                  <div className="text-xs text-slate-400 mb-2">Data File</div>
+                  <label className="block rounded-lg border-2 border-dashed border-slate-600 bg-slate-950/70 p-5 text-center cursor-pointer hover:border-cyan-500/60">
+                    <input
+                      type="file"
+                      accept=".csv,.json"
+                      onChange={(e) => {
+                        setFile(e.target.files?.[0] || null);
+                        setVirtualDemoFileName(null);
+                      }}
+                      className="hidden"
+                    />
+                    {file ? (
+                      <span className="text-sm text-slate-100">{file.name}</span>
+                    ) : (
+                      <span className="text-sm text-slate-300">Click to upload CSV/JSON</span>
+                    )}
+                  </label>
+                  <p className="mt-2 text-xs text-slate-400">
+                    If this file is engineering context, set <span className="text-slate-200">Upload This File As</span> to
+                    <span className="text-slate-200"> Engineering / Facility File</span>.
+                  </p>
+                </div>
+
+                <label className="flex items-center gap-2 text-sm text-slate-300">
+                  <input
+                    type="checkbox"
+                    checked={autonomousRun}
+                    onChange={(e) => setAutonomousRun(e.target.checked)}
+                    className="h-4 w-4"
+                  />
+                  Autonomous pipeline mode (recommended)
+                </label>
+                <p className="-mt-3 text-xs text-slate-400">
+                  Runs parse, normalize, dedupe, confidence scoring, and publish.
+                </p>
+
+                <div className="flex items-center justify-between gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setSetupStep(3)}
+                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!file || isLoading || demoRunLoading}
+                    className="rounded-md bg-cyan-400 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-300 disabled:opacity-60"
+                  >
+                    {isLoading || demoRunLoading ? "Agent Running..." : "Start Data Gathering Agent"}
+                  </button>
+                </div>
+                {!file && <p className="text-[11px] text-amber-300">Upload a file to run this button.</p>}
+                <p className="text-[11px] text-slate-500">Read-only collection only. No process control or logic writes.</p>
+              </div>
+            )}
           </form>
 
           {error && <div className="mt-4 rounded-md border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">{error}</div>}
