@@ -526,7 +526,7 @@ export default function IngestPage() {
       <div className="min-h-screen bg-[#050915] text-slate-100 px-4 py-10">
         <div className="mx-auto max-w-3xl">
           <div className="rounded-2xl border border-slate-700/70 bg-slate-900/80 p-6 md:p-8">
-            <div className="inline-flex rounded-full border border-cyan-500/40 bg-cyan-500/10 px-3 py-1 text-xs text-cyan-200">
+            <div className="inline-flex rounded-full border border-zinc-600/60 bg-zinc-800/50 px-3 py-1 text-xs text-zinc-200">
               Guided Demo Run
             </div>
             <h1 className="mt-3 text-3xl font-semibold text-white">Running Mission Map Demo</h1>
@@ -580,7 +580,7 @@ export default function IngestPage() {
               </button>
               <Link
                 href="/"
-                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-cyan-400/60"
+                className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-200 hover:border-slate-500"
               >
                 Back Home
               </Link>
@@ -604,7 +604,7 @@ export default function IngestPage() {
             <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-emerald-100">
               OT Safety Notice: data-only workflow. No control-system writes.
             </div>
-            <div className="rounded-md border border-cyan-500/40 bg-cyan-500/10 px-3 py-2 text-cyan-100">
+            <div className="rounded-md border border-zinc-700 bg-zinc-900/70 px-3 py-2 text-zinc-200">
               1) Org+Boundary 2) Deployment 3) Source Bundle 4) File+Run
             </div>
           </div>
@@ -652,7 +652,7 @@ export default function IngestPage() {
                   <input
                     value={orgSlug}
                     onChange={(e) => setOrgSlug(e.target.value)}
-                    className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-cyan-400 focus:outline-none"
+                    className="w-full rounded-md border border-slate-700 bg-slate-950 px-3 py-2 text-sm text-slate-100 focus:border-slate-400 focus:outline-none"
                     placeholder="tmna"
                   />
                   <p className="mt-1 text-[11px] text-slate-500">Used to persist data-boundary policy for this org.</p>
@@ -702,7 +702,7 @@ export default function IngestPage() {
                       type="button"
                       onClick={() => void loadBoundaryPolicy(orgSlug)}
                       disabled={boundarySaving || boundaryLoading || !orgSlug.trim()}
-                      className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 hover:border-cyan-400/60 disabled:opacity-60"
+                      className="rounded-md border border-slate-700 bg-slate-950 px-3 py-1.5 text-xs text-slate-300 hover:border-slate-500 disabled:opacity-60"
                     >
                       {boundaryLoading ? "Loading..." : "Refresh Policy"}
                     </button>
@@ -802,7 +802,7 @@ export default function IngestPage() {
                   <button
                     type="button"
                     onClick={() => goToStep(1)}
-                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
+                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
                   >
                     Back
                   </button>
@@ -829,7 +829,7 @@ export default function IngestPage() {
                       setUploadSource("claroty");
                       pushAction("Source bundle preset", "info", "Suggested Start Bundle");
                     }}
-                      className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
+                      className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
                     >
                       Suggested Start Bundle
                     </button>
@@ -840,7 +840,7 @@ export default function IngestPage() {
                       setUploadSource("claroty");
                       pushAction("Source bundle preset", "info", "OT-Only");
                     }}
-                      className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-cyan-400/70"
+                      className="rounded-md border border-slate-700 px-2 py-1 text-xs text-slate-200 hover:border-slate-500"
                     >
                       OT-Only (Not Recommended)
                     </button>
@@ -915,7 +915,7 @@ export default function IngestPage() {
                     {hasNetworkCoverage ? "Network/security source selected" : "Network context missing"}
                   </div>
                   <div className="mt-3 border-t border-slate-700 pt-2 text-slate-300">
-                    <div className="text-cyan-200 mb-1">Engineering suggestions for first-pass quality:</div>
+                    <div className="text-zinc-200 mb-1">Engineering suggestions for first-pass quality:</div>
                     {suggestedEngineeringInputs.map((item) => (
                       <div key={item}>• {item}</div>
                     ))}
@@ -926,7 +926,7 @@ export default function IngestPage() {
                   <button
                     type="button"
                     onClick={() => goToStep(2)}
-                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
+                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
                   >
                     Back
                   </button>
@@ -946,7 +946,7 @@ export default function IngestPage() {
               <div className="space-y-4">
                 <div>
                   <div className="text-xs text-slate-400 mb-2">Data File</div>
-                  <label className="block rounded-lg border-2 border-dashed border-slate-600 bg-slate-950/70 p-5 text-center cursor-pointer hover:border-cyan-500/60">
+                  <label className="block rounded-lg border-2 border-dashed border-slate-600 bg-slate-950/70 p-5 text-center cursor-pointer hover:border-slate-400">
                     <input
                       type="file"
                       accept=".csv,.json"
@@ -994,7 +994,7 @@ export default function IngestPage() {
                   <button
                     type="button"
                     onClick={() => goToStep(3)}
-                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-cyan-400/60"
+                    className="rounded-md border border-slate-700 px-4 py-2 text-sm text-slate-300 hover:border-slate-500"
                   >
                     Back
                   </button>
@@ -1036,7 +1036,7 @@ export default function IngestPage() {
                   </Link>
                   <Link
                     href="/explorer"
-                    className="rounded-md border border-cyan-400/50 bg-cyan-500/10 px-3 py-1.5 text-xs text-cyan-100 hover:bg-cyan-500/20"
+                    className="rounded-md border border-slate-600 bg-slate-900/70 px-3 py-1.5 text-xs text-slate-200 hover:border-slate-400"
                   >
                     Open Graph Explorer
                   </Link>
@@ -1099,7 +1099,7 @@ export default function IngestPage() {
           </div>
 
           <div className="mt-6 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
-            <div className="text-xs uppercase tracking-wide text-cyan-300">Why This Matters</div>
+            <div className="text-xs uppercase tracking-wide text-zinc-300">Why This Matters</div>
             <p className="mt-2 text-sm text-slate-300">
               This agent is your product moat: repeatable ingestion, deterministic asset identity, and CMDB-ready outputs
               with less service effort per deployment.
@@ -1108,7 +1108,7 @@ export default function IngestPage() {
 
           <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
             <div className="flex items-center justify-between gap-2">
-              <div className="text-xs uppercase tracking-wide text-cyan-300">Action Log</div>
+              <div className="text-xs uppercase tracking-wide text-zinc-300">Action Log</div>
               <button
                 type="button"
                 onClick={() => {
@@ -1118,7 +1118,7 @@ export default function IngestPage() {
                   }
                   pushAction("Action log cleared", "info");
                 }}
-                className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:border-cyan-400/60"
+                className="rounded border border-slate-700 px-2 py-1 text-[11px] text-slate-300 hover:border-slate-500"
               >
                 Clear
               </button>
@@ -1152,7 +1152,7 @@ export default function IngestPage() {
 
           {allowDemoTools ? (
             <div className="mt-4 rounded-xl border border-slate-700 bg-slate-950/70 p-4">
-            <div className="text-xs uppercase tracking-wide text-cyan-300">Demo Pack Runner</div>
+            <div className="text-xs uppercase tracking-wide text-zinc-300">Demo Pack Runner</div>
             <p className="mt-2 text-sm text-slate-300">
               Run a realistic demo pack directly in the app (no terminal required).
             </p>
@@ -1172,7 +1172,7 @@ export default function IngestPage() {
                   onClick={() => setDemoPack(value)}
                   className={`rounded-md border px-2.5 py-1.5 text-xs ${
                     demoPack === value
-                      ? "border-cyan-400 bg-cyan-500/15 text-cyan-100"
+                      ? "border-slate-500 bg-slate-800 text-slate-100"
                       : "border-slate-700 bg-slate-900 text-slate-300"
                   }`}
                 >
@@ -1187,7 +1187,7 @@ export default function IngestPage() {
                 void runDemoPack(false);
               }}
               disabled={demoLoading}
-              className="mt-3 w-full rounded-md border border-cyan-400/50 bg-cyan-500/10 px-3 py-2 text-sm text-cyan-100 hover:bg-cyan-500/20 disabled:opacity-60"
+              className="mt-3 w-full rounded-md border border-slate-600 bg-slate-900/70 px-3 py-2 text-sm text-slate-100 hover:border-slate-400 disabled:opacity-60"
             >
               {demoLoading ? "Generating Demo Pack..." : "Generate Demo Pack"}
             </button>
@@ -1209,7 +1209,7 @@ export default function IngestPage() {
                   </div>
                 ))}
                 {demoNextStep && (
-                  <div className="rounded-md border border-cyan-500/40 bg-cyan-500/10 p-2 text-xs text-cyan-100">
+                  <div className="rounded-md border border-slate-600 bg-slate-900/70 p-2 text-xs text-slate-200">
                     {demoNextStep}
                   </div>
                 )}
