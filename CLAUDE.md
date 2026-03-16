@@ -1,8 +1,10 @@
-# OT Asset Canon - Converged Plant Intelligence
+# OT Radar - Signal Intelligence for OT Cybersecurity
 
 ## Project Overview
 
-The OT Asset Canon is a converged plant intelligence platform that unifies three traditionally siloed perspectives:
+OT Radar collects, normalizes, and scores signals from federal, regulatory, and market data sources (SAM.gov, USASpending, FPDS, EPA, SEC EDGAR, EIA, FRED, FDA, Federal Register, news RSS) into a unified signal format. OT Vantage consumes these signals via `GET /api/signals`. Each signal carries an `otRelevanceScore` reflecting how relevant it is to OT cybersecurity opportunities.
+
+Previously known as "OT Asset Canon," the platform also provides converged plant intelligence that unifies three traditionally siloed perspectives:
 
 1. **Engineering** - Process consequences, HAZOP findings, SIL ratings, design basis
 2. **OT/Control Systems** - Controllers, firmware, I/O, logic, historian tags

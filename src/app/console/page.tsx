@@ -76,7 +76,7 @@ export default function ConsolePage() {
         <header className="spec-block p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="spec-eyebrow">Baseload Console</p>
+              <p className="spec-eyebrow">OT Radar Console</p>
               <h1 className="spec-title mt-2">Client Workflow Command</h1>
               <p className="spec-body mt-2 max-w-2xl">
                 Assess first, map second, contextualize third. One workspace, one sequence.

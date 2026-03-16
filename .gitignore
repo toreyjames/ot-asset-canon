@@ -36,3 +36,7 @@ next-env.d.ts
 
 # Drizzle
 /drizzle
+
+# Autopilot state ingestion artifacts
+data/state-ingestion-progress.json
+data/state-ingestion.log

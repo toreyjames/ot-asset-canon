@@ -1,0 +1,16 @@
+{
+  "crons": [
+    {
+      "path": "/api/industrial-opportunity-tracker/ingest",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/industrial-opportunity-tracker/ingest?sources=eia-electricity,eia-grid-monitor,interconnection-queue",
+      "schedule": "30 6 * * *"
+    },
+    {
+      "path": "/api/industrial-opportunity-tracker/ingest?sources=sec-filings",
+      "schedule": "0 7 * * *"
+    }
+  ]
+}

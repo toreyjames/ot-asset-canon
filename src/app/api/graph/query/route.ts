@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { resolveCanonicalAssets } from "@/lib/industrial/entity-resolution";
-import { buildIndustrialGraph } from "@/lib/industrial/graph";
-import { executeGraphQuery } from "@/lib/industrial/query";
-import { CandidateAssetRecord, GraphQueryRequest } from "@/lib/industrial/types";
+import { resolveCanonicalAssets } from "@/lib/planttrace/entity-resolution";
+import { buildIndustrialGraph } from "@/lib/planttrace/graph";
+import { executeGraphQuery } from "@/lib/planttrace/query";
+import { CandidateAssetRecord, GraphQueryRequest } from "@/lib/planttrace/types";
 
 const SAMPLE_CANDIDATES: CandidateAssetRecord[] = [
   {

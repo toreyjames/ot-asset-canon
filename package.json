@@ -1,5 +1,5 @@
 {
-  "name": "planttrace",
+  "name": "ot-radar",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -12,7 +12,13 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed:industrial-tracker": "node --env-file=.env.local scripts/seed-industrial-tracker.mjs",
+    "ingest:industrial-tracker": "node --env-file=.env.local scripts/ingest-industrial-tracker.mjs",
+    "ingest:industrial-tracker:states": "node --env-file=.env.local scripts/auto-state-ingest.mjs",
+    "enrich:industrial-tracker-eia-geo": "node --env-file=.env.local scripts/enrich-industrial-tracker-eia-geo.mjs",
+    "repair:industrial-tracker-geo": "node --env-file=.env.local scripts/repair-industrial-tracker-geo.mjs",
+    "import:industrial-tracker-cbsa": "node --env-file=.env.local scripts/import-industrial-tracker-cbsa.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.0",
@@ -27,6 +33,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "three": "^0.183.1",
+    "unzipper": "^0.12.3",
+    "xlsx": "^0.18.5",
+    "yauzl": "^3.2.1",
     "zod": "^3.24.0"
   },
   "devDependencies": {

@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
-import { runEdgeCollector } from "@/lib/industrial/edge-collector";
+import { runEdgeCollector } from "@/lib/planttrace/edge-collector";
 import {
   finalizeIngestionMetadata,
   normalizeIngestionRecords,
-} from "@/lib/industrial/ingestion-pipeline";
-import { resolveCanonicalAssets } from "@/lib/industrial/entity-resolution";
-import { buildIndustrialGraph } from "@/lib/industrial/graph";
-import { graphRepository } from "@/lib/industrial/graph-repository";
+} from "@/lib/planttrace/ingestion-pipeline";
+import { resolveCanonicalAssets } from "@/lib/planttrace/entity-resolution";
+import { buildIndustrialGraph } from "@/lib/planttrace/graph";
+import { graphRepository } from "@/lib/planttrace/graph-repository";
 
 const CollectorRunSchema = z.object({
   mode: z.enum(["file_upload", "watched_folder", "api_pull", "scheduled_import"]),

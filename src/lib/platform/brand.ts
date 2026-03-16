@@ -1,9 +1,9 @@
 export const PLATFORM_BRAND = {
-  companyName: "Baseload",
-  legalName: "Baseload Solutions LLC",
-  platformName: "Baseload",
-  domain: "aibaseload.com",
-  tagline: "Industrial Intelligence",
+  companyName: "OT Radar",
+  legalName: "OT Radar",
+  platformName: "OT Radar",
+  domain: "otradar.app",
+  tagline: "Signal Intelligence for OT Cybersecurity",
   description:
-    "Baseload connects Mission Map and Industrial Tracker so teams can understand what is happening inside the plant and across the industrial landscape around it.",
+    "OT Radar collects, normalizes, and scores signals from federal, regulatory, and market sources to surface OT cybersecurity opportunities across the industrial landscape.",
 } as const;

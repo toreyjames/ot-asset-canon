@@ -20,7 +20,6 @@ export function executeGraphQuery(
     };
   }
 
-  // Graph traversal mode (MVP: simple dependency view)
   const pivot = graph.nodes.find((n) => n.label.toLowerCase().includes(q));
   if (!pivot) {
     return {
