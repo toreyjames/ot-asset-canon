@@ -36,17 +36,48 @@ function formTypeToSignalType(formType: string): Signal["signalType"] {
   return "risk-disclosure";
 }
 
+const ENTITY_SECTOR_MAP: [RegExp, Signal["sector"]][] = [
+  [/\b(raytheon|lockheed|northrop|l3harris|bae\s*systems|general\s*dynamics|leidos|booz\s*allen|caci|saic)\b/i, "defense"],
+  [/\b(boeing|ge\s*aerospace|airbus|textron\s*aviation|spirit\s*aero|pratt\s*&?\s*whitney|rolls[\s-]royce)\b/i, "aerospace"],
+  [/\b(nuscale|constellation\s*energy|centrus|bwx\s*technologies|cameco|uranium)\b/i, "nuclear"],
+  [/\b(intel\b|tsmc|micron|texas\s*instruments|nvidia|amd|qualcomm|broadcom|applied\s*materials|lam\s*research|asml|kla\s*corp|globalfoundries|on\s*semiconductor|marvell)\b/i, "semiconductor"],
+  [/\b(pfizer|merck|johnson\s*&|abbott|eli\s*lilly|amgen|gilead|moderna|astrazeneca|novartis|bristol[\s-]myers|roche)\b/i, "pharma"],
+  [/\b(exxon|chevron|conocophillips|marathon\s*petroleum|valero|phillips\s*66|halliburton|schlumberger|baker\s*hughes|occidental|pioneer\s*natural|devon\s*energy)\b/i, "oil-gas"],
+  [/\b(duke\s*energy|southern\s*company|nextera|dominion|aes\s*corp|entergy|exelon|xcel\s*energy|first\s*energy|pacific\s*gas|edison\s*international)\b/i, "energy"],
+  [/\b(dow\s*inc|dow\s*chemical|basf|dupont|3m\s*company|eastman\s*chemical|lyondellbasell|huntsman|celanese|westlake|olin\s*corp)\b/i, "chemical"],
+  [/\b(xylem|veolia|american\s*water|essential\s*utilities|mueller\s*water|evoqua)\b/i, "water"],
+  [/\b(albemarle|livent|piedmont\s*lithium|lithium\s*americas|mp\s*materials|freeport[\s-]mcmoran)\b/i, "critical-minerals"],
+  [/\b(panasonic\s*energy|quantumscape|solid\s*power|enovix|freyr|li[\s-]cycle)\b/i, "ev-battery"],
+  [/\b(equinix|digital\s*realty|cyrusone|qts\s*realty|coresite|iron\s*mountain.*data)\b/i, "data-center"],
+];
+
+const SECTOR_KEYWORDS: [RegExp, Signal["sector"]][] = [
+  [/\b(missile|military|dod|darpa|army|navy|air\s*force|marine corps|combat|munition|weapon|defense\s+contract)\b/i, "defense"],
+  [/\b(aerospace|nasa|aviation|faa|spacecraft|satellite|rocket)\b/i, "aerospace"],
+  [/\b(nuclear|nrc|reactor|uranium|enrichment|fission|isotope)\b/i, "nuclear"],
+  [/\b(semiconductor|chip\s*fab|wafer|foundry|lithography|chips\s+act|integrated\s+circuit)\b/i, "semiconductor"],
+  [/\b(data\s*center|hyperscale|cloud\s+infrastructure|server\s*farm|colocation)\b/i, "data-center"],
+  [/\b(energy|electric\s+util|utility|grid|power\s*plant|solar|wind|ferc|turbine|substation|generator)\b/i, "energy"],
+  [/\b(pipeline|oil\s+and\s+gas|petroleum|refinery|lng|natural\s*gas|drilling|crude|offshore\s+platform)\b/i, "oil-gas"],
+  [/\b(pharmac|drug\b|fda|biotech|clinical\s*trial|gxp|biologic)\b/i, "pharma"],
+  [/\b(life.?science|medical\s*device|diagnostic)\b/i, "life-sciences"],
+  [/\b(chemical|hazardous|toxic|pfas|pesticide|industrial\s+chemical)\b/i, "chemical"],
+  [/\b(water|wastewater|treatment\s*plant|reservoir|desalination|potable)\b/i, "water"],
+  [/\b(battery|lithium|cathode|anode|ev\s+battery|gigafactory|cell\s+manufacturing)\b/i, "ev-battery"],
+  [/\b(mining|mineral|rare\s*earth|critical\s*mineral|cobalt)\b/i, "critical-minerals"],
+];
+
 function inferSector(entityName: string, text: string): Signal["sector"] {
-  const lower = (entityName + " " + text).toLowerCase();
-  if (lower.includes("defense") || lower.includes("raytheon") || lower.includes("lockheed") || lower.includes("northrop") || lower.includes("l3harris") || lower.includes("bae systems")) return "defense";
-  if (lower.includes("aerospace") || lower.includes("boeing") || lower.includes("ge aerospace")) return "aerospace";
-  if (lower.includes("nuclear") || lower.includes("nuscale") || lower.includes("constellation energy")) return "nuclear";
-  if (lower.includes("semiconductor") || lower.includes("intel") || lower.includes("tsmc") || lower.includes("micron") || lower.includes("texas instruments")) return "semiconductor";
-  if (lower.includes("pharma") || lower.includes("pfizer") || lower.includes("merck") || lower.includes("johnson") || lower.includes("abbott")) return "pharma";
-  if (lower.includes("energy") || lower.includes("exxon") || lower.includes("chevron") || lower.includes("duke energy") || lower.includes("southern company")) return "energy";
-  if (lower.includes("chemical") || lower.includes("dow") || lower.includes("basf") || lower.includes("dupont") || lower.includes("3m")) return "chemical";
-  if (lower.includes("water") || lower.includes("xylem") || lower.includes("veolia")) return "water";
-  if (lower.includes("oil") || lower.includes("gas") || lower.includes("pipeline") || lower.includes("halliburton")) return "oil-gas";
+  const combined = `${entityName} ${text}`;
+
+  for (const [pattern, sector] of ENTITY_SECTOR_MAP) {
+    if (pattern.test(entityName)) return sector;
+  }
+
+  for (const [pattern, sector] of SECTOR_KEYWORDS) {
+    if (pattern.test(combined)) return sector;
+  }
+
   return "manufacturing";
 }
 

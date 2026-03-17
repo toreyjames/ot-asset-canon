@@ -29,15 +29,68 @@ const OT_NAICS = [
   "541330",
 ];
 
-function naicsToSector(naics: string | null): Signal["sector"] {
-  if (!naics) return "manufacturing";
-  const prefix = naics.slice(0, 3);
-  if (prefix === "336") return "defense";
-  if (prefix === "334") return "semiconductor";
-  if (prefix === "325") return "chemical";
-  if (prefix === "221") return "energy";
-  if (prefix === "237") return "energy";
-  if (prefix === "541") return "defense";
+const AGENCY_SECTOR_MAP: Record<string, Signal["sector"]> = {
+  "department of defense": "defense",
+  "department of the army": "defense",
+  "department of the navy": "defense",
+  "department of the air force": "defense",
+  "defense logistics agency": "defense",
+  "defense advanced research projects agency": "defense",
+  "missile defense agency": "defense",
+  "department of energy": "energy",
+  "nuclear regulatory commission": "nuclear",
+  "environmental protection agency": "chemical",
+  "department of homeland security": "defense",
+  "national aeronautics and space administration": "aerospace",
+  "federal aviation administration": "aerospace",
+  "food and drug administration": "pharma",
+  "department of health and human services": "pharma",
+  "pipeline and hazardous materials safety administration": "oil-gas",
+  "federal energy regulatory commission": "energy",
+  "national nuclear security administration": "nuclear",
+};
+
+const SECTOR_KEYWORDS: [RegExp, Signal["sector"]][] = [
+  [/\b(missile|military|dod|darpa|army|navy|air\s*force|marine corps|combat|munition|weapon)\b/i, "defense"],
+  [/\b(aerospace|nasa|aviation|faa|spacecraft|satellite|rocket)\b/i, "aerospace"],
+  [/\b(nuclear|nrc|reactor|uranium|enrichment|fission|isotope)\b/i, "nuclear"],
+  [/\b(semiconductor|chip\s*fab|wafer|tsmc|intel\s+corp|micron|foundry|lithography)\b/i, "semiconductor"],
+  [/\b(data\s*center|hyperscale|cloud\s+infrastructure|server\s*farm|colocation)\b/i, "data-center"],
+  [/\b(energy|electric|utility|grid|power\s*plant|solar|wind|ferc|doe\b|turbine|substation|generator)\b/i, "energy"],
+  [/\b(pipeline|oil|petroleum|refinery|lng|natural\s*gas|drilling|crude)\b/i, "oil-gas"],
+  [/\b(pharmac|drug\b|fda|biotech|clinical\s*trial|gxp|biologic)\b/i, "pharma"],
+  [/\b(life.?science|medical\s*device|diagnostic)\b/i, "life-sciences"],
+  [/\b(chemical|hazardous|toxic|pfas|epa\s+reg|pesticide)\b/i, "chemical"],
+  [/\b(water|wastewater|treatment\s*plant|reservoir|desalination|potable)\b/i, "water"],
+  [/\b(battery|lithium|cathode|anode|ev\s+battery|gigafactory|cell\s+manufacturing)\b/i, "ev-battery"],
+  [/\b(mining|mineral|rare\s*earth|critical\s*mineral|cobalt|nickel\s+ore)\b/i, "critical-minerals"],
+];
+
+function inferSector(agency: string, description: string, naics: string | null): Signal["sector"] {
+  const agencyLower = agency.toLowerCase();
+  for (const [key, sector] of Object.entries(AGENCY_SECTOR_MAP)) {
+    if (agencyLower.includes(key)) return sector;
+  }
+
+  const text = `${agency} ${description}`;
+  for (const [pattern, sector] of SECTOR_KEYWORDS) {
+    if (pattern.test(text)) return sector;
+  }
+
+  if (naics) {
+    const p3 = naics.slice(0, 3);
+    const p4 = naics.slice(0, 4);
+    if (p3 === "336") return "defense";
+    if (p3 === "334") return "semiconductor";
+    if (p4 === "3254") return "pharma";
+    if (p3 === "325") return "chemical";
+    if (p3 === "221") return "energy";
+    if (p3 === "237") return "energy";
+    if (p4 === "2131" || p4 === "2122") return "critical-minerals";
+    if (p3 === "324") return "oil-gas";
+    if (p3 === "541") return "defense";
+  }
+
   return "manufacturing";
 }
 
@@ -133,7 +186,7 @@ export async function fetchUSASpendingSignals(): Promise<Signal[]> {
         sourceId: award["Award ID"] || award.generated_internal_id,
         timestamp: new Date(award["Start Date"]).toISOString(),
         entity: award["Recipient Name"] || "Unknown",
-        sector: naicsToSector(award.NAICS),
+        sector: inferSector(award["Awarding Agency"] || "", description, award.NAICS),
         signalType: "contract-award",
         location,
         value: Math.round(award["Award Amount"] || 0),
@@ -220,7 +273,7 @@ export async function fetchUSASpendingSignals(): Promise<Signal[]> {
             sourceId: award["Award ID"] || award.generated_internal_id,
             timestamp: new Date(award["Start Date"]).toISOString(),
             entity: award["Recipient Name"] || "Unknown",
-            sector: naicsToSector(award.NAICS),
+            sector: inferSector(award["Awarding Agency"] || "", description, award.NAICS),
             signalType: "contract-award",
             location,
             value: Math.round(award["Award Amount"] || 0),

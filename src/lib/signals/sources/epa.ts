@@ -28,16 +28,39 @@ interface EchoFacility {
   CWPPenalties?: number;
 }
 
-function naicsToSector(codes: string | undefined): Signal["sector"] {
-  if (!codes) return "manufacturing";
-  const lower = codes.toLowerCase();
-  if (lower.includes("3241") || lower.includes("3251") || lower.includes("3252") || lower.includes("3253") || lower.includes("3255") || lower.includes("3259")) return "chemical";
-  if (lower.includes("3241")) return "oil-gas";
-  if (lower.includes("2211")) return "energy";
-  if (lower.includes("3344") || lower.includes("3345")) return "semiconductor";
-  if (lower.includes("3254")) return "pharma";
-  if (lower.includes("2213")) return "water";
-  return "manufacturing";
+const SECTOR_KEYWORDS: [RegExp, Signal["sector"]][] = [
+  [/\b(nuclear|reactor|uranium)\b/i, "nuclear"],
+  [/\b(semiconductor|chip\s*fab|wafer|foundry)\b/i, "semiconductor"],
+  [/\b(refinery|petroleum|oil|crude|lng|natural\s*gas|pipeline)\b/i, "oil-gas"],
+  [/\b(pharmac|drug|biotech|gxp|biologic)\b/i, "pharma"],
+  [/\b(water|wastewater|treatment\s*plant|reservoir|potable|drinking\s+water|sewer)\b/i, "water"],
+  [/\b(power\s*plant|electric|utility|grid|solar|wind|generator|substation)\b/i, "energy"],
+  [/\b(battery|lithium|cathode|anode|gigafactory)\b/i, "ev-battery"],
+  [/\b(mining|mineral|rare\s*earth|smelter|ore)\b/i, "critical-minerals"],
+  [/\b(defense|military|army|navy|air\s*force|dod)\b/i, "defense"],
+  [/\b(aerospace|nasa|aviation|aircraft)\b/i, "aerospace"],
+  [/\b(data\s*center|hyperscale|server\s*farm)\b/i, "data-center"],
+];
+
+function inferSector(name: string, naicsCodes: string | undefined): Signal["sector"] {
+  const nameLower = name.toLowerCase();
+  for (const [pattern, sector] of SECTOR_KEYWORDS) {
+    if (pattern.test(nameLower)) return sector;
+  }
+
+  if (naicsCodes) {
+    const codes = naicsCodes;
+    if (codes.includes("2213")) return "water";
+    if (codes.includes("2211") || codes.includes("2212")) return "energy";
+    if (codes.includes("3254")) return "pharma";
+    if (codes.includes("3344") || codes.includes("3345")) return "semiconductor";
+    if (codes.includes("3241") || codes.includes("3242")) return "oil-gas";
+    if (codes.includes("3251") || codes.includes("3252") || codes.includes("3253") || codes.includes("3255") || codes.includes("3259")) return "chemical";
+    if (codes.includes("3364") || codes.includes("3366")) return "aerospace";
+    if (codes.includes("3361") || codes.includes("3363")) return "defense";
+  }
+
+  return "chemical";
 }
 
 function inferSignalType(facility: EchoFacility): Signal["signalType"] {
@@ -106,7 +129,7 @@ export async function fetchEpaSignals(): Promise<Signal[]> {
             fac.CWPDateLastInspection || fac.CWPDateLastFormalAction || Date.now()
           ).toISOString(),
           entity: fac.CWPName,
-          sector: naicsToSector(fac.CWPNAICSCodes),
+          sector: inferSector(fac.CWPName, fac.CWPNAICSCodes),
           signalType: inferSignalType(fac),
           location,
           value: fac.CWPPenalties || 0,

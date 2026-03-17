@@ -101,13 +101,18 @@ export async function fetchEiaSignals(): Promise<Signal[]> {
 }
 
 function inferEiaSector(plant: EIAPlantRecord): Signal["sector"] {
+  const name = (plant.plantName || "").toLowerCase();
   const fuel = (plant.fuel2002 || "").toLowerCase();
-  const mover = (plant.primeMover || "").toLowerCase();
-  if (fuel.includes("nuc")) return "nuclear";
-  if (fuel.includes("sun") || fuel.includes("wnd") || fuel.includes("wat")) return "energy";
-  if (fuel.includes("ng") || fuel.includes("gas")) return "energy";
-  if (fuel.includes("pet") || fuel.includes("oil")) return "oil-gas";
-  if (mover.includes("st") || mover.includes("ct") || mover.includes("ca")) return "energy";
+  const sector = (plant.sector || "").toLowerCase();
+
+  if (fuel.includes("nuc") || name.includes("nuclear")) return "nuclear";
+
+  if (name.includes("military") || name.includes("army") || name.includes("navy") || name.includes("air force") || name.includes("dod")) return "defense";
+
+  if (fuel.includes("pet") || fuel.includes("oil") || name.includes("refinery") || name.includes("petroleum")) return "oil-gas";
+
+  if (sector.includes("industrial") && (name.includes("chemical") || name.includes("dow") || name.includes("basf"))) return "chemical";
+
   return "energy";
 }
 

@@ -17,33 +17,63 @@ const OT_SEARCH_TERMS = [
   "ISA 62443",
 ];
 
-const SECTOR_MAP: Record<string, Signal["sector"]> = {
-  "Department of Defense": "defense",
-  "Department of Energy": "energy",
-  "Nuclear Regulatory Commission": "nuclear",
-  "Environmental Protection Agency": "chemical",
-  "Department of Homeland Security": "defense",
-  "Food and Drug Administration": "pharma",
-  "Pipeline and Hazardous Materials Safety Administration": "oil-gas",
-  "Federal Energy Regulatory Commission": "energy",
-  "Cybersecurity and Infrastructure Security Agency": "defense",
-};
+const AGENCY_SECTOR_MAP: [string, Signal["sector"]][] = [
+  ["department of defense", "defense"],
+  ["department of the army", "defense"],
+  ["department of the navy", "defense"],
+  ["department of the air force", "defense"],
+  ["defense logistics agency", "defense"],
+  ["defense advanced research projects", "defense"],
+  ["missile defense agency", "defense"],
+  ["cybersecurity and infrastructure security", "defense"],
+  ["department of homeland security", "defense"],
+  ["department of energy", "energy"],
+  ["federal energy regulatory commission", "energy"],
+  ["nuclear regulatory commission", "nuclear"],
+  ["national nuclear security administration", "nuclear"],
+  ["environmental protection agency", "chemical"],
+  ["food and drug administration", "pharma"],
+  ["department of health and human services", "pharma"],
+  ["national institutes of health", "life-sciences"],
+  ["pipeline and hazardous materials safety", "oil-gas"],
+  ["bureau of ocean energy management", "oil-gas"],
+  ["bureau of safety and environmental enforcement", "oil-gas"],
+  ["national aeronautics and space administration", "aerospace"],
+  ["federal aviation administration", "aerospace"],
+  ["bureau of reclamation", "water"],
+  ["army corps of engineers", "water"],
+  ["mine safety and health administration", "critical-minerals"],
+  ["bureau of land management", "critical-minerals"],
+];
+
+const SECTOR_KEYWORDS: [RegExp, Signal["sector"]][] = [
+  [/\b(missile|military|dod|darpa|army|navy|air\s*force|marine corps|combat|munition|weapon)\b/i, "defense"],
+  [/\b(aerospace|nasa|aviation|faa|spacecraft|satellite|rocket)\b/i, "aerospace"],
+  [/\b(nuclear|nrc|reactor|uranium|enrichment|fission|isotope)\b/i, "nuclear"],
+  [/\b(semiconductor|chip\s*fab|wafer|tsmc|intel\s+corp|micron|foundry|lithography|chips\s+act)\b/i, "semiconductor"],
+  [/\b(data\s*center|hyperscale|cloud\s+infrastructure|server\s*farm|colocation)\b/i, "data-center"],
+  [/\b(energy|electric|utility|grid|power\s*plant|solar|wind|ferc|turbine|substation|generator)\b/i, "energy"],
+  [/\b(pipeline|oil|petroleum|refinery|lng|natural\s*gas|drilling|crude)\b/i, "oil-gas"],
+  [/\b(pharmac|drug\b|fda|biotech|clinical\s*trial|gxp|biologic)\b/i, "pharma"],
+  [/\b(life.?science|medical\s*device|diagnostic)\b/i, "life-sciences"],
+  [/\b(chemical|hazardous|toxic|pfas|pesticide)\b/i, "chemical"],
+  [/\b(water|wastewater|treatment\s*plant|reservoir|desalination|potable|drinking\s+water)\b/i, "water"],
+  [/\b(battery|lithium|cathode|anode|ev\s+battery|gigafactory|cell\s+manufacturing)\b/i, "ev-battery"],
+  [/\b(mining|mineral|rare\s*earth|critical\s*mineral|cobalt|nickel\s+ore)\b/i, "critical-minerals"],
+];
 
 function inferSector(agencies: string[], text: string): Signal["sector"] {
-  for (const agency of agencies) {
-    for (const [key, sector] of Object.entries(SECTOR_MAP)) {
-      if (agency.toLowerCase().includes(key.toLowerCase())) return sector;
+  const agenciesLower = agencies.map((a) => a.toLowerCase());
+  for (const [key, sector] of AGENCY_SECTOR_MAP) {
+    for (const a of agenciesLower) {
+      if (a.includes(key)) return sector;
     }
   }
-  const lower = text.toLowerCase();
-  if (lower.includes("nuclear")) return "nuclear";
-  if (lower.includes("semiconductor") || lower.includes("chips")) return "semiconductor";
-  if (lower.includes("pharma") || lower.includes("drug") || lower.includes("fda")) return "pharma";
-  if (lower.includes("pipeline") || lower.includes("oil") || lower.includes("gas")) return "oil-gas";
-  if (lower.includes("energy") || lower.includes("electric") || lower.includes("grid")) return "energy";
-  if (lower.includes("water") || lower.includes("wastewater")) return "water";
-  if (lower.includes("chemical")) return "chemical";
-  if (lower.includes("defense") || lower.includes("military")) return "defense";
+
+  for (const [pattern, sector] of SECTOR_KEYWORDS) {
+    if (pattern.test(text)) return sector;
+  }
+
   return "manufacturing";
 }
 
